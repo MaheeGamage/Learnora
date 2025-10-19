@@ -9,8 +9,7 @@ class StartRequest(BaseModel):
 # --- Resume Paused Graph Run ---
 class ResumeRequest(BaseModel):
     thread_id: str
-    review_action: Literal["approved", "feedback"]
-    human_comment: Optional[str] = None
+    human_answer: str
 
 # --- Minimal API Response ---
 class GraphResponse(BaseModel):
