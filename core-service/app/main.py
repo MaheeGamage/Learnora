@@ -1,29 +1,13 @@
-from typing import Union
-
 from fastapi import FastAPI
-from pydantic import BaseModel
-from app.learning_path_planner.lpp_workflow import ask_clarifying_questions, generate_learning_path, extract_json
+from dotenv import load_dotenv
 
-app = FastAPI(title="Personalized Learning Path API")
+# Load environment variables from .env file BEFORE importing modules that need them
+load_dotenv()
 
-# Data models
-class TopicInput(BaseModel):
-    topic: str
+from app.learning_path_planner.learning_path_router import router as learning_path_router
 
-class GenerateInput(BaseModel):
-    topic: str
-    conversation_history: list
-    user_answers: str
+app = FastAPI()
+# add_cors_middleware(app)
 
-
-@app.post("/assess")
-def assess(input_data: TopicInput):
-    messages, questions = ask_clarifying_questions(input_data.topic)
-    return {"questions": questions, "conversation_history": [m.dict() for m in messages]}
-
-
-@app.post("/generate")
-def generate(input_data: GenerateInput):
-    content = generate_learning_path(input_data.topic, input_data.conversation_history, input_data.user_answers)
-    json_data = extract_json(content)
-    return {"learning_path": json_data, "raw_response": content}
+# Register lesson routers
+app.include_router(learning_path_router)
