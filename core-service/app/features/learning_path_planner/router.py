@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.features.learning_path_planner.schemas import (
+    LearningPathCreate,
     StartRequest,
     ResumeRequest,
     GraphResponse,
@@ -44,3 +45,8 @@ def get_learning_path(thread_id: str, db: Session = Depends(get_db)):
 def list_learning_paths(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all learning paths"""
     return crud.get_all_learning_paths(db, skip=skip, limit=limit)
+
+@router.post("/", response_model=LearningPathResponse)
+def create_learning_path(request: LearningPathCreate, db: Session = Depends(get_db)):
+    """Create a new learning path"""
+    return crud.create_learning_path(db, request)
