@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.db.database import get_db
+from app.database.session import get_db
 from app.features.learning_path_planner.schemas import (
     LearningPathCreate,
     StartRequest,

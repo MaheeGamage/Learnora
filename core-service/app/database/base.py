@@ -1,7 +1,9 @@
 from sqlalchemy import Column, Integer, DateTime
 from sqlalchemy.sql import func
-from app.db.database import Base
+from sqlalchemy.orm import declarative_base
 
+# Create Base class for models
+Base = declarative_base()
 
 class BaseModel(Base):
     """Base model with common fields"""

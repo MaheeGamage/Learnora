@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aiosqlite>=0.21.0",
+    "fastapi-users[sqlalchemy]>=14.0.1",
     "fastapi[standard]>=0.119.0",
     "langchain-core>=0.3.79",
     "langchain[google-genai]>=0.3.27",

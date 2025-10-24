@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, JSON
-from app.db.base import BaseModel
+from app.database.base import BaseModel
 
 
 class LearningPath(BaseModel):

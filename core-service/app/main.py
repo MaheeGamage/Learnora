@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.features.learning_path_planner.router import router as learning_path_router
-from app.db.database import engine
-from app.db.base import BaseModel
+from app.database.connection import engine
+from app.database.base import BaseModel
 
 # Create database tables
 BaseModel.metadata.create_all(bind=engine)
