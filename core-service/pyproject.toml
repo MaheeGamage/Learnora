@@ -9,5 +9,7 @@ dependencies = [
     "langchain-core>=0.3.79",
     "langchain[google-genai]>=0.3.27",
     "langgraph>=0.6.10",
+    "pydantic-settings>=2.11.0",
     "python-dotenv>=1.1.1",
+    "sqlalchemy>=2.0.44",
 ]
