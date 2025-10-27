@@ -68,7 +68,6 @@ export default function AppProviderWrapper({ children }: Readonly<{ children: Re
       authentication={AUTHENTICATION}
     >
       <SessionContext.Provider value={sessionContextValue}>
-        
         {children}
       </SessionContext.Provider>
     </ReactRouterAppProvider>
