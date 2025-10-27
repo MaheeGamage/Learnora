@@ -6,8 +6,8 @@ export default [
     route("/orders", "./pages/orders.tsx"),
   ]),
 
-  // Temp for development
-  route("/temp/signin", "./other/SignIn.tsx"),
+  // Authentication
+  route("/sign-in", "./pages/sign-in.tsx"),
 
   // * matches all URLs, the ? makes it optional so it will match / as well
   route("*?", "catchall.tsx"),

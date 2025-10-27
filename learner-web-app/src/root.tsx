@@ -1,4 +1,3 @@
-import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import {
   Links,
   Meta,
@@ -6,15 +5,13 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import type { Navigation } from '@toolpad/core';
+import AppProviderWrapper from "./common/providers/AppProviderWrapper";
 
 export function Layout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
       <head>
@@ -36,30 +33,10 @@ export function Layout({
   );
 }
 
-const NAVIGATION: Navigation = [
-  {
-    kind: 'header',
-    title: 'Main items',
-  },
-  {
-    title: 'Dashboard',
-    icon: <DashboardIcon />,
-  },
-  {
-    segment: 'orders',
-    title: 'Orders',
-    icon: <ShoppingCartIcon />,
-  },
-];
-
-const BRANDING = {
-  title: 'My Toolpad Core App',
-};
-
 export default function Root() {
   return (
-    <ReactRouterAppProvider navigation={NAVIGATION} branding={BRANDING}>
-      <Outlet />;
-    </ReactRouterAppProvider>
-  )
+    <AppProviderWrapper>
+      <Outlet />
+    </AppProviderWrapper>
+  );
 }
