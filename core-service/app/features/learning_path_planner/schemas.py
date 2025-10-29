@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Any
+from typing import Optional, Any, List
 from typing import Literal
 from datetime import datetime
 
@@ -43,3 +43,19 @@ class LearningPathResponse(LearningPathBase):
     
     class Config:
         from_attributes = True
+
+
+# Knowledge Graph schemas
+class ConceptInfo(BaseModel):
+    """Information about a concept in the knowledge graph."""
+    id: str
+    label: str
+    prerequisites: List[str] = []
+
+
+class LearningPathKGResponse(BaseModel):
+    """Knowledge graph information for a learning path."""
+    thread_id: str
+    topic: str
+    concepts: List[ConceptInfo]
+    concept_count: int

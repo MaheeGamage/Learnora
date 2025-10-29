@@ -1,0 +1,55 @@
+@prefix kg: <http://learnora.ai/kg#> .
+@prefix users: <http://learnora.ai/users#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ==========================================
+# User Knowledge Ontology for Learnora
+# Defines the vocabulary for user knowledge and progress
+# ==========================================
+
+# ===== Classes =====
+
+kg:User a owl:Class ;
+    rdfs:label "Learner User" ;
+    rdfs:comment "A user of the Learnora learning platform" .
+
+# ===== Object Properties =====
+
+kg:knows a owl:ObjectProperty ;
+    rdfs:label "knows concept" ;
+    rdfs:comment "Indicates that the user has learned and knows this concept" ;
+    rdfs:domain kg:User ;
+    rdfs:range kg:Concept .
+
+kg:learning a owl:ObjectProperty ;
+    rdfs:label "currently learning" ;
+    rdfs:comment "Indicates that the user is currently learning this concept" ;
+    rdfs:domain kg:User ;
+    rdfs:range kg:Concept .
+
+kg:followsPath a owl:ObjectProperty ;
+    rdfs:label "follows learning path" ;
+    rdfs:comment "Indicates that the user is following this learning path" ;
+    rdfs:domain kg:User ;
+    rdfs:range kg:LearningPath .
+
+# ===== Datatype Properties =====
+
+kg:userId a owl:DatatypeProperty ;
+    rdfs:label "user identifier" ;
+    rdfs:comment "Unique identifier for the user" ;
+    rdfs:domain kg:User ;
+    rdfs:range xsd:string .
+
+kg:learnedAt a owl:DatatypeProperty ;
+    rdfs:label "learned at" ;
+    rdfs:comment "Timestamp when the user learned a concept" ;
+    rdfs:range xsd:dateTime .
+
+kg:proficiencyLevel a owl:DatatypeProperty ;
+    rdfs:label "proficiency level" ;
+    rdfs:comment "User's proficiency level for a concept (e.g., beginner, intermediate, expert)" ;
+    rdfs:range xsd:string .

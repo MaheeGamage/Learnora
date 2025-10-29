@@ -162,3 +162,5 @@ cython_debug/
 #.idea/
 
 *.db
+# Knowledge Graph data files (instances)
+data/graph/instances/

@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     
+    # Knowledge Graph Settings
+    KG_STORAGE_PATH: str = "./data/graph"
+    KG_FORMAT: str = "turtle"  # RDF serialization format (turtle, xml, n3, etc.)
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

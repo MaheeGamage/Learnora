@@ -1,0 +1,44 @@
+@prefix kg: <http://learnora.ai/kg#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ==========================================
+# Learning Path Ontology for Learnora
+# Defines the vocabulary for learning paths
+# ==========================================
+
+# ===== Classes =====
+
+kg:LearningPath a owl:Class ;
+    rdfs:label "Learning Path" ;
+    rdfs:comment "A structured sequence of concepts to learn for achieving a learning goal" .
+
+# ===== Object Properties =====
+
+kg:includesConcept a owl:ObjectProperty ;
+    rdfs:label "includes concept" ;
+    rdfs:comment "Indicates that this learning path includes a specific concept" ;
+    rdfs:domain kg:LearningPath ;
+    rdfs:range kg:Concept .
+
+# ===== Datatype Properties =====
+
+kg:topic a owl:DatatypeProperty ;
+    rdfs:label "learning topic" ;
+    rdfs:comment "The main topic or goal of this learning path" ;
+    rdfs:domain kg:LearningPath ;
+    rdfs:range xsd:string .
+
+kg:threadId a owl:DatatypeProperty ;
+    rdfs:label "thread identifier" ;
+    rdfs:comment "Unique identifier for the learning path thread" ;
+    rdfs:domain kg:LearningPath ;
+    rdfs:range xsd:string .
+
+kg:createdAt a owl:DatatypeProperty ;
+    rdfs:label "created at" ;
+    rdfs:comment "Timestamp when the learning path was created" ;
+    rdfs:domain kg:LearningPath ;
+    rdfs:range xsd:dateTime .

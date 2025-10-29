@@ -1,0 +1,38 @@
+@prefix kg: <http://learnora.ai/kg#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ==========================================
+# Concept Ontology for Learnora
+# Defines the vocabulary for learning concepts
+# ==========================================
+
+# ===== Classes =====
+
+kg:Concept a owl:Class ;
+    rdfs:label "Learning Concept" ;
+    rdfs:comment "Represents a knowledge concept that can be learned. Examples: Python, Neural Networks, Linear Algebra" .
+
+# ===== Object Properties =====
+
+kg:hasPrerequisite a owl:ObjectProperty ;
+    rdfs:label "has prerequisite" ;
+    rdfs:comment "Indicates that this concept has another concept as a prerequisite. Points backward from advanced to foundational concepts." ;
+    rdfs:domain kg:Concept ;
+    rdfs:range kg:Concept .
+
+# ===== Datatype Properties =====
+
+kg:label a owl:DatatypeProperty ;
+    rdfs:label "concept label" ;
+    rdfs:comment "Human-readable name of the concept" ;
+    rdfs:domain kg:Concept ;
+    rdfs:range xsd:string .
+
+kg:description a owl:DatatypeProperty ;
+    rdfs:label "description" ;
+    rdfs:comment "Detailed description of the concept" ;
+    rdfs:domain kg:Concept ;
+    rdfs:range xsd:string .
