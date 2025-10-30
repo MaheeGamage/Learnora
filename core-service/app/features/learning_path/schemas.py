@@ -24,20 +24,16 @@ class LearningPathBase(BaseModel):
 
 
 class LearningPathCreate(LearningPathBase):
-    thread_id: str
-    status: str = "active"
+    conversation_thread_id: str
 
 
 class LearningPathUpdate(BaseModel):
-    graph_state: Optional[dict] = None
-    status: Optional[str] = None
+    topic: Optional[str] = None
 
 
 class LearningPathResponse(LearningPathBase):
     id: int
-    thread_id: str
-    status: str
-    graph_state: Optional[dict]
+    conversation_thread_id: str
     created_at: datetime
     updated_at: Optional[datetime]
     

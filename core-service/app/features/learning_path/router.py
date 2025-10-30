@@ -36,8 +36,8 @@ async def resume_graph(request: ResumeRequest, db: AsyncSession = Depends(get_db
 
 @router.get("/{thread_id}", response_model=LearningPathResponse)
 async def get_learning_path(thread_id: str, db: AsyncSession = Depends(get_db)):
-    """Get learning path details"""
-    db_learning_path = await crud.get_learning_path(db, thread_id)
+    """Get learning path details by conversation thread ID"""
+    db_learning_path = await crud.get_learning_path_by_thread_id(db, thread_id)
     if not db_learning_path:
         raise HTTPException(status_code=404, detail="Learning path not found")
     return db_learning_path

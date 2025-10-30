@@ -14,10 +14,18 @@ async def create_learning_path(db: AsyncSession, learning_path: LearningPathCrea
     return db_learning_path
 
 
-async def get_learning_path(db: AsyncSession, thread_id: str) -> Optional[LearningPath]:
-    """Get learning path by thread_id"""
+async def get_learning_path_by_thread_id(db: AsyncSession, conversation_thread_id: str) -> Optional[LearningPath]:
+    """Get learning path by conversation_thread_id"""
     result = await db.execute(
-        select(LearningPath).where(LearningPath.thread_id == thread_id)
+        select(LearningPath).where(LearningPath.conversation_thread_id == conversation_thread_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_learning_path_by_id(db: AsyncSession, learning_path_id: int) -> Optional[LearningPath]:
+    """Get learning path by ID"""
+    result = await db.execute(
+        select(LearningPath).where(LearningPath.id == learning_path_id)
     )
     return result.scalar_one_or_none()
 
@@ -32,11 +40,11 @@ async def get_all_learning_paths(db: AsyncSession, skip: int = 0, limit: int = 1
 
 async def update_learning_path(
     db: AsyncSession, 
-    thread_id: str, 
+    conversation_thread_id: str, 
     update_data: LearningPathUpdate
 ) -> Optional[LearningPath]:
-    """Update learning path graph state or status"""
-    db_learning_path = await get_learning_path(db, thread_id)
+    """Update learning path"""
+    db_learning_path = await get_learning_path_by_thread_id(db, conversation_thread_id)
     if db_learning_path:
         update_dict = update_data.model_dump(exclude_unset=True)
         for key, value in update_dict.items():
@@ -46,9 +54,9 @@ async def update_learning_path(
     return db_learning_path
 
 
-async def delete_learning_path(db: AsyncSession, thread_id: str) -> bool:
+async def delete_learning_path(db: AsyncSession, conversation_thread_id: str) -> bool:
     """Delete a learning path"""
-    db_learning_path = await get_learning_path(db, thread_id)
+    db_learning_path = await get_learning_path_by_thread_id(db, conversation_thread_id)
     if db_learning_path:
         await db.delete(db_learning_path)
         await db.commit()

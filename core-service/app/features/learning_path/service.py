@@ -103,13 +103,13 @@ class LearningPathService:
         
         Args:
             db: Database session
-            thread_id: The thread identifier
+            thread_id: The conversation thread identifier
             
         Returns:
             Dictionary with learning path KG info or None if not found
         """
         # Get from database
-        db_path = await crud.get_learning_path(db, thread_id)
+        db_path = await crud.get_learning_path_by_thread_id(db, thread_id)
         if not db_path:
             return None
         
@@ -154,14 +154,14 @@ class LearningPathService:
     
     async def start_learning_path(self, db: AsyncSession, topic: str) -> GraphResponse:
         """Start a new learning path"""
-        # Generate unique thread ID
-        thread_id = str(uuid4())
-        config = {"configurable": {"thread_id": thread_id}}
+        # Generate unique thread ID for the conversation
+        conversation_thread_id = str(uuid4())
+        config = {"configurable": {"thread_id": conversation_thread_id}}
         initial_state = {"topic": topic}
         
         # Save to database (async)
         learning_path_create = LearningPathCreate(
-            thread_id=thread_id,
+            conversation_thread_id=conversation_thread_id,
             topic=topic
         )
         await crud.create_learning_path(db, learning_path_create)
@@ -170,10 +170,10 @@ class LearningPathService:
         result = await asyncio.to_thread(self.graph.invoke, initial_state, config)
         message_threads = result.get("messages", {})
         
-        logger.info(f"Started learning path with thread_id: {thread_id}")
+        logger.info(f"Started learning path with conversation_thread_id: {conversation_thread_id}")
         
         return GraphResponse(
-            thread_id=thread_id,
+            thread_id=conversation_thread_id,
             messages=message_threads
         )
     
@@ -182,6 +182,12 @@ class LearningPathService:
         
         config = {"configurable": {"thread_id": thread_id}}
         state = {"messages": [HumanMessage(content=human_answer)]}
+        
+        # Get learning path from database to retrieve topic
+        db_learning_path = await crud.get_learning_path_by_thread_id(db, thread_id)
+        if not db_learning_path:
+            logger.error(f"Learning path not found for conversation thread {thread_id}")
+            raise ValueError(f"Learning path not found for conversation thread {thread_id}")
         
         # Update graph state (sync code - run in thread pool)
         await asyncio.to_thread(self.graph.update_state, config, state)
@@ -199,18 +205,31 @@ class LearningPathService:
                 learning_path_json = extract_json_array_from_message(last_message.content)
 
                 if learning_path_json:
-                    # Store the extracted concepts
-                    # TODO: Need to implement following,
-                    #  1. Convert learning path json to RDFLib format
-                    #  2. Save learning path
-                    #  3. Pass learning path to user
-
+                    # Store the extracted concepts in KG using the conversation thread ID
+                    topic = db_learning_path.topic
+                    await asyncio.to_thread(
+                        parse_and_store_concepts,
+                        thread_id,  # conversation_thread_id
+                        topic,
+                        learning_path_json,
+                        self.concept_service,
+                        self.create_learning_path_kg
+                    )
                     logger.info(f"Extracted and stored {len(learning_path_json)} concepts for thread {thread_id}")
                 else:
-                    # throw error
-                    raise HTTPException(status_code=500, detail="Learning path generation failed. Please start over.")
+                    # Fallback: Try to extract JSON-LD format (backward compatibility)
+                    jsonld_data = extract_json_from_message(last_message.content)
+                    if jsonld_data and "@graph" in jsonld_data:
+                        logger.warning(f"Detected JSON-LD format for thread {thread_id}, this format is deprecated")
+                        # You could add backward compatibility handling here if needed
+                    else:
+                        logger.error(f"Failed to extract learning path JSON for thread {thread_id}")
+                        raise HTTPException(
+                            status_code=500, 
+                            detail="Learning path generation failed. Could not extract valid JSON from AI response."
+                        )
         
-        logger.info(f"Resumed learning path with thread_id: {thread_id}")
+        logger.info(f"Resumed learning path with conversation_thread_id: {thread_id}")
         
         return GraphResponse(
             thread_id=thread_id,

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, JSON
+from sqlalchemy import Column, String
 from app.database.base import BaseModel
 
 
@@ -6,10 +6,8 @@ class LearningPath(BaseModel):
     """SQLAlchemy model for learning paths"""
     __tablename__ = "learning_path"
 
-    thread_id = Column(String(50), unique=True, index=True, nullable=False)
     topic = Column(String(255), nullable=False)
-    graph_state = Column(JSON, nullable=True)  # Store graph state
-    status = Column(String(50), default="active")  # active, completed, paused
+    conversation_thread_id = Column(String(50), unique=True, index=True, nullable=False)
 
     def __repr__(self):
-        return f"<LearningPath(thread_id={self.thread_id}, topic={self.topic})>"
+        return f"<LearningPath(id={self.id}, topic={self.topic}, conversation_thread_id={self.conversation_thread_id})>"
