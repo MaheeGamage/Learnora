@@ -8,7 +8,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class LearningPathKG:
     """Knowledge Graph layer for learning path operations."""
     
