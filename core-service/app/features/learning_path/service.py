@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 from langchain_core.messages import HumanMessage, AIMessage
@@ -11,10 +12,15 @@ from app.features.learning_path.schemas import (
 )
 from app.features.learning_path.kg import LearningPathKG
 from app.features.concept.service import ConceptService
+from app.features.learning_path.utils import (
+    extract_json_array_from_message,
+    extract_json_from_message,
+    parse_and_store_concepts
+)
 import logging
 import asyncio
-import json
-import re
+
+from app.features import learning_path
 
 logger = logging.getLogger(__name__)
 
@@ -144,105 +150,6 @@ class LearningPathService:
             "concept_count": len(concepts_info)
         }
     
-    def _extract_json_from_message(self, content: str) -> Optional[dict]:
-        """
-        Extract JSON-LD from AI message content.
-        
-        The AI sometimes wraps JSON in markdown code blocks or adds extra text.
-        This method tries to extract valid JSON.
-        
-        Args:
-            content: The message content
-            
-        Returns:
-            Parsed JSON dict or None if parsing fails
-        """
-        # Try to find JSON in markdown code blocks
-        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(1)
-        else:
-            # Try to find raw JSON
-            json_match = re.search(r'\{.*\}', content, re.DOTALL)
-            if json_match:
-                json_str = json_match.group(0)
-            else:
-                return None
-        
-        try:
-            return json.loads(json_str)
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON: {e}")
-            return None
-    
-    def _parse_and_store_jsonld(self, thread_id: str, topic: str, jsonld_data: dict) -> None:
-        """
-        Parse JSON-LD knowledge graph and store concepts in KG.
-        
-        Args:
-            thread_id: The thread identifier
-            topic: The learning topic
-            jsonld_data: The JSON-LD data from the AI
-        """
-        try:
-            graph_data = jsonld_data.get("@graph", [])
-            if not graph_data:
-                logger.warning(f"No @graph found in JSON-LD for thread {thread_id}")
-                return
-            
-            concept_ids = []
-            
-            # First pass: Create all concepts
-            for concept_data in graph_data:
-                concept_id = concept_data.get("@id", "").split(":")[-1]  # Remove namespace prefix
-                concept_name = concept_data.get("name", concept_id)
-                
-                if not concept_id:
-                    continue
-                
-                # Add concept (service handles duplicates)
-                self.concept_service.add_concept(
-                    concept_id=concept_id,
-                    label=concept_name,
-                    description=f"Concept for learning path: {topic}"
-                )
-                concept_ids.append(concept_id)
-            
-            # Second pass: Add prerequisites
-            for concept_data in graph_data:
-                concept_id = concept_data.get("@id", "").split(":")[-1]
-                requires = concept_data.get("requires", [])
-                
-                if not concept_id or not requires:
-                    continue
-                
-                # Extract prerequisite IDs
-                prereq_ids = []
-                if isinstance(requires, list):
-                    for req in requires:
-                        if isinstance(req, dict):
-                            prereq_id = req.get("@id", "").split(":")[-1]
-                        else:
-                            prereq_id = str(req).split(":")[-1]
-                        if prereq_id:
-                            prereq_ids.append(prereq_id)
-                
-                # Re-add concept with prerequisites (KG layer handles this)
-                if prereq_ids:
-                    self.concept_service.add_concept(
-                        concept_id=concept_id,
-                        label=concept_data.get("name", concept_id),
-                        prerequisites=prereq_ids
-                    )
-            
-            # Create learning path in KG
-            if concept_ids:
-                self.create_learning_path_kg(thread_id, topic, concept_ids)
-                logger.info(f"Stored {len(concept_ids)} concepts in KG for thread {thread_id}")
-            
-        except Exception as e:
-            logger.error(f"Error parsing and storing JSON-LD: {e}", exc_info=True)
-    
     # ===== LangGraph Operations =====
     
     async def start_learning_path(self, db: AsyncSession, topic: str) -> GraphResponse:
@@ -272,10 +179,6 @@ class LearningPathService:
     
     async def resume_learning_path(self, db: AsyncSession, thread_id: str, human_answer: str) -> GraphResponse:
         """Resume an existing learning path"""
-        # Check if learning path exists (async)
-        db_learning_path = await crud.get_learning_path(db, thread_id)
-        if not db_learning_path:
-            raise ValueError(f"Learning path with thread_id {thread_id} not found")
         
         config = {"configurable": {"thread_id": thread_id}}
         state = {"messages": [HumanMessage(content=human_answer)]}
@@ -287,26 +190,25 @@ class LearningPathService:
         result = await asyncio.to_thread(self.graph.invoke, None, config)
         message_threads = result.get("messages", {})
         
-        # Update database with new state (async)
-        update_data = LearningPathUpdate(graph_state=result)
-        await crud.update_learning_path(db, thread_id, update_data)
-        
         # Check if this was the final step (learning path generation)
-        # The last message should contain the JSON-LD knowledge graph
+        # The last message should contain the JSON array of concepts
         if message_threads and len(message_threads) > 0:
             last_message = message_threads[-1]
             if isinstance(last_message, AIMessage):
-                # Try to extract and store JSON-LD
-                jsonld_data = self._extract_json_from_message(last_message.content)
-                if jsonld_data and "@graph" in jsonld_data:
-                    topic = db_learning_path.topic
-                    await asyncio.to_thread(
-                        self._parse_and_store_jsonld,
-                        thread_id,
-                        topic,
-                        jsonld_data
-                    )
-                    logger.info(f"Extracted and stored knowledge graph for thread {thread_id}")
+                # Extract the JSON output and save to variable
+                learning_path_json = extract_json_array_from_message(last_message.content)
+
+                if learning_path_json:
+                    # Store the extracted concepts
+                    # TODO: Need to implement following,
+                    #  1. Convert learning path json to RDFLib format
+                    #  2. Save learning path
+                    #  3. Pass learning path to user
+
+                    logger.info(f"Extracted and stored {len(learning_path_json)} concepts for thread {thread_id}")
+                else:
+                    # throw error
+                    raise HTTPException(status_code=500, detail="Learning path generation failed. Please start over.")
         
         logger.info(f"Resumed learning path with thread_id: {thread_id}")
         

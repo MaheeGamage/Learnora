@@ -23,9 +23,9 @@ Your response must be a single JSON code block containing an array of concept ob
 
 REQUIRED FORMAT:
 [
-  {"concept": "ConceptName1", "prerequisites": []},
-  {"concept": "ConceptName2", "prerequisites": ["ConceptName1"]},
-  {"concept": "ConceptName3", "prerequisites": ["ConceptName1", "ConceptName2"]}
+  {{"concept": "ConceptName1", "prerequisites": []}},
+  {{"concept": "ConceptName2", "prerequisites": ["ConceptName1"]}},
+  {{"concept": "ConceptName3", "prerequisites": ["ConceptName1", "ConceptName2"]}}
 ]
 
 RULES:
@@ -38,7 +38,7 @@ RULES:
 7. Return ONLY the JSON array - no markdown formatting, no backticks, no explanation text
 
 EXAMPLE:
-[{"concept":"Variables","prerequisites":[]},{"concept":"Data Types","prerequisites":["Variables"]},{"concept":"Functions","prerequisites":["Variables","Data Types"]}]
+[{{"concept":"Variables","prerequisites":[]}},{{"concept":"Data Types","prerequisites":["Variables"]}},{{"concept":"Functions","prerequisites":["Variables","Data Types"]}}]
 """
 
 # Define the initial assessment prompt

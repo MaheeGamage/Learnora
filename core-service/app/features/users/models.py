@@ -19,7 +19,7 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     - is_superuser: bool (default False)
     - is_verified: bool (default False)
     """
-    __tablename__ = "users"
+    __tablename__ = "user"
     
     # Override id to ensure it's defined properly
     id = Column(Integer, primary_key=True, index=True)

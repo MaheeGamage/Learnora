@@ -4,7 +4,7 @@ from app.database.base import BaseModel
 
 class LearningPath(BaseModel):
     """SQLAlchemy model for learning paths"""
-    __tablename__ = "learning_paths"
+    __tablename__ = "learning_path"
 
     thread_id = Column(String(50), unique=True, index=True, nullable=False)
     topic = Column(String(255), nullable=False)
