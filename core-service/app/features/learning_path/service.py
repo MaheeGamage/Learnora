@@ -46,6 +46,7 @@ class LearningPathService:
     
     def create_learning_path_kg(
         self,
+        user_id: str,
         thread_id: str,
         topic: str,
         concept_ids: list[str]
@@ -56,6 +57,7 @@ class LearningPathService:
         Business logic: Validates path doesn't exist, validates concepts exist.
         
         Args:
+            user_id: User identifier who owns this learning path
             thread_id: Unique thread identifier
             topic: The learning topic/goal
             concept_ids: List of concept IDs to include in the path
@@ -64,38 +66,40 @@ class LearningPathService:
             URIRef of the created learning path
         """
         # Business validation: check if path already exists
-        if self.kg.path_exists(thread_id):
-            logger.warning(f"Learning path {thread_id} already exists")
+        if self.kg.path_exists(user_id, thread_id):
+            logger.warning(f"Learning path {thread_id} already exists for user {user_id}")
             # Could raise an exception or return existing path depending on requirements
         
         # Delegate to KG layer
-        path = self.kg.create_path(thread_id, topic, concept_ids)
-        logger.info(f"Created learning path: {thread_id} with {len(concept_ids)} concepts")
+        path = self.kg.create_path(user_id, thread_id, topic, concept_ids)
+        logger.info(f"Created learning path: {thread_id} for user {user_id} with {len(concept_ids)} concepts")
         return path
     
-    def get_learning_path_kg(self, thread_id: str) -> Optional[RDFGraph]:
+    def get_learning_path_kg(self, user_id: str, thread_id: str) -> Optional[RDFGraph]:
         """
         Get a learning path graph from KG.
         
         Args:
+            user_id: User identifier who owns the path
             thread_id: The thread identifier
             
         Returns:
             RDFGraph containing the learning path, or empty graph if not found
         """
-        return self.kg.get_path(thread_id)
+        return self.kg.get_path(user_id, thread_id)
     
-    def get_learning_path_concepts(self, thread_id: str) -> list[URIRef]:
+    def get_learning_path_concepts(self, user_id: str, thread_id: str) -> list[URIRef]:
         """
         Get all concepts in a learning path from KG.
         
         Args:
+            user_id: User identifier who owns the path
             thread_id: The thread identifier
             
         Returns:
             List of concept URIRefs in the learning path
         """
-        return self.kg.get_path_concepts(thread_id)
+        return self.kg.get_path_concepts(user_id, thread_id)
     
     async def get_learning_path_kg_info(self, db: AsyncSession, thread_id: str) -> Optional[dict]:
         """
@@ -113,8 +117,11 @@ class LearningPathService:
         if not db_path:
             return None
         
+        # Get user_id from database record
+        user_id = str(db_path.user_id)
+        
         # Check if KG data exists
-        if not self.kg.path_exists(thread_id):
+        if not self.kg.path_exists(user_id, thread_id):
             return {
                 "thread_id": thread_id,
                 "topic": db_path.topic,
@@ -123,7 +130,7 @@ class LearningPathService:
             }
         
         # Get concepts from KG
-        concept_uris = await asyncio.to_thread(self.get_learning_path_concepts, thread_id)
+        concept_uris = await asyncio.to_thread(self.get_learning_path_concepts, user_id, thread_id)
         
         # Format concept information
         concepts_info = []
@@ -177,8 +184,18 @@ class LearningPathService:
             messages=message_threads
         )
     
-    async def resume_learning_path(self, db: AsyncSession, thread_id: str, human_answer: str) -> GraphResponse:
-        """Resume an existing learning path"""
+    async def resume_learning_path(self, db: AsyncSession, thread_id: str, human_answer: str, user_id: str = "default_user") -> GraphResponse:
+        """Resume an existing learning path
+        
+        Args:
+            db: Database session
+            thread_id: The conversation thread identifier
+            human_answer: Human's answer to the previous question
+            user_id: User identifier (default: "default_user" until DB migration adds user_id field)
+        
+        Returns:
+            GraphResponse with updated conversation
+        """
         
         config = {"configurable": {"thread_id": thread_id}}
         state = {"messages": [HumanMessage(content=human_answer)]}
@@ -188,6 +205,9 @@ class LearningPathService:
         if not db_learning_path:
             logger.error(f"Learning path not found for conversation thread {thread_id}")
             raise ValueError(f"Learning path not found for conversation thread {thread_id}")
+        
+        # TODO: Get user_id from db_learning_path once database migration adds user_id field
+        # For now, using parameter or default value
         
         # Update graph state (sync code - run in thread pool)
         await asyncio.to_thread(self.graph.update_state, config, state)
@@ -209,13 +229,14 @@ class LearningPathService:
                     topic = db_learning_path.topic
                     await asyncio.to_thread(
                         parse_and_store_concepts,
+                        user_id,  # Pass user_id
                         thread_id,  # conversation_thread_id
                         topic,
                         learning_path_json,
                         self.concept_service,
                         self.create_learning_path_kg
                     )
-                    logger.info(f"Extracted and stored {len(learning_path_json)} concepts for thread {thread_id}")
+                    logger.info(f"Extracted and stored {len(learning_path_json)} concepts for thread {thread_id}, user {user_id}")
                 else:
                     # Fallback: Try to extract JSON-LD format (backward compatibility)
                     jsonld_data = extract_json_from_message(last_message.content)

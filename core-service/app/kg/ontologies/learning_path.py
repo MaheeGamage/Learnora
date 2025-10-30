@@ -14,21 +14,25 @@ class LearningPathOntology(KGBase):
         graph: Graph,
         thread_id: str,
         topic: str,
+        user_id: str,
         created_at: datetime = None
     ) -> URIRef:
         """
         Add a learning path to the graph.
+        Note: Learning paths are now stored within user graphs.
         
         Args:
-            graph: The RDF graph to add to
+            graph: The RDF graph to add to (typically a user's graph)
             thread_id: Unique thread identifier
             topic: The learning topic/goal
+            user_id: User ID who owns this learning path
             created_at: Creation timestamp (defaults to now)
             
         Returns:
             URIRef of the created learning path
         """
         path = URIRef(self.PATHS[thread_id])
+        user = URIRef(self.USERS[user_id])
         
         # Add type
         graph.add((path, RDF.type, self.KG.LearningPath))
@@ -39,6 +43,9 @@ class LearningPathOntology(KGBase):
         
         if created_at:
             graph.add((path, self.KG.createdAt, Literal(created_at)))
+        
+        # Link user to learning path
+        graph.add((user, self.KG.followsPath, path))
         
         return path
     

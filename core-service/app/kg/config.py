@@ -14,7 +14,6 @@ class KGConfig:
     
     # Instance data paths
     CONCEPTS_FILE = INSTANCES_PATH / "concepts.ttl"
-    LEARNING_PATHS_DIR = INSTANCES_PATH / "learning_paths"
     USERS_DIR = INSTANCES_PATH / "users"
     
     # Ontology files
@@ -35,18 +34,15 @@ class KGConfig:
         """Ensure all necessary directories exist."""
         cls.ONTOLOGIES_PATH.mkdir(parents=True, exist_ok=True)
         cls.INSTANCES_PATH.mkdir(parents=True, exist_ok=True)
-        cls.LEARNING_PATHS_DIR.mkdir(parents=True, exist_ok=True)
         cls.USERS_DIR.mkdir(parents=True, exist_ok=True)
     
     @classmethod
     def get_user_file_path(cls, user_id: str) -> Path:
-        """Get the file path for a user's knowledge graph."""
+        """
+        Get the file path for a user's knowledge graph.
+        This file now contains both user knowledge and their learning paths.
+        """
         return cls.USERS_DIR / f"user_{user_id}.ttl"
-    
-    @classmethod
-    def get_learning_path_file_path(cls, thread_id: str) -> Path:
-        """Get the file path for a learning path graph."""
-        return cls.LEARNING_PATHS_DIR / f"thread_{thread_id}.ttl"
 
 
 # Ensure directories exist on import

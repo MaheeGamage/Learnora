@@ -81,6 +81,7 @@ def extract_json_from_message(content: str) -> Optional[dict]:
 
 
 def parse_and_store_concepts(
+    user_id: str,
     thread_id: str,
     topic: str,
     concepts_data: list,
@@ -91,6 +92,7 @@ def parse_and_store_concepts(
     Parse JSON array of concepts and store in KG.
     
     Args:
+        user_id: User identifier who owns this learning path
         thread_id: The thread identifier
         topic: The learning topic
         concepts_data: List of concept objects from the AI
@@ -151,7 +153,7 @@ def parse_and_store_concepts(
         
         # Create learning path in KG
         if concept_ids:
-            create_learning_path_callback(thread_id, topic, concept_ids)
+            create_learning_path_callback(user_id, thread_id, topic, concept_ids)
             logger.info(f"Stored {len(concept_ids)} concepts in KG for thread {thread_id}")
         
     except Exception as e:

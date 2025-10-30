@@ -66,6 +66,7 @@ class UserKnowledgeOntology(KGBase):
     def add_user_learning_path(self, graph: Graph, user: URIRef, path: URIRef) -> None:
         """
         Associate a user with a learning path they're following.
+        Note: This is typically called automatically when creating a learning path.
         
         Args:
             graph: The RDF graph to add to
@@ -148,3 +149,48 @@ class UserKnowledgeOntology(KGBase):
             True if user knows the concept, False otherwise
         """
         return (user, self.KG.knows, concept) in graph
+    
+    def get_user_learning_paths(self, graph: Graph, user: URIRef) -> list[URIRef]:
+        """
+        Get all learning paths a user is following.
+        
+        Args:
+            graph: The RDF graph to query
+            user: The user URI
+            
+        Returns:
+            List of learning path URIRefs
+        """
+        query = """
+            SELECT ?path
+            WHERE {
+                ?user kg:followsPath ?path .
+            }
+        """
+        results = graph.query(
+            query,
+            initBindings={'user': user},
+            initNs={'kg': self.KG}
+        )
+        return [row.path for row in results]
+    
+    def ensure_user_exists(self, graph: Graph, user_id: str) -> URIRef:
+        """
+        Ensure a user exists in the graph, creating if necessary.
+        
+        Args:
+            graph: The RDF graph
+            user_id: The user identifier
+            
+        Returns:
+            URIRef of the user
+        """
+        user = URIRef(self.USERS[user_id])
+        
+        # Check if user already exists
+        if (user, RDF.type, self.KG.User) not in graph:
+            # Create user if doesn't exist
+            graph.add((user, RDF.type, self.KG.User))
+            graph.add((user, self.KG.userId, Literal(user_id)))
+        
+        return user

@@ -46,39 +46,39 @@ class KGStorage(KGBase):
     
     # ===== User Knowledge Storage =====
     
-    def load_user_knowledge(self, user_id: str) -> Graph:
+    def load_user_graph(self, user_id: str) -> Graph:
         """
-        Load a user's knowledge graph.
+        Load a user's complete graph (knowledge + learning paths).
         
         Args:
             user_id: User identifier
             
         Returns:
-            Graph with user's knowledge, or empty graph if file doesn't exist
+            Graph with user's knowledge and learning paths, or empty graph if file doesn't exist
         """
         file_path = KGConfig.get_user_file_path(user_id)
         graph = self.load_graph(file_path)
         if graph is None:
-            logger.info(f"User knowledge file not found for user {user_id}, returning empty graph")
+            logger.info(f"User graph file not found for user {user_id}, returning empty graph")
             return self.create_graph()
-        logger.info(f"Loaded user {user_id} knowledge graph with {len(graph)} triples")
+        logger.info(f"Loaded user {user_id} graph with {len(graph)} triples")
         return graph
     
-    def save_user_knowledge(self, user_id: str, graph: Graph) -> None:
+    def save_user_graph(self, user_id: str, graph: Graph) -> None:
         """
-        Save a user's knowledge graph.
+        Save a user's complete graph (knowledge + learning paths).
         
         Args:
             user_id: User identifier
-            graph: Graph containing user's knowledge
+            graph: Graph containing user's knowledge and learning paths
         """
         file_path = KGConfig.get_user_file_path(user_id)
         self.save_graph(graph, file_path)
-        logger.info(f"Saved user {user_id} knowledge graph with {len(graph)} triples")
+        logger.info(f"Saved user {user_id} graph with {len(graph)} triples")
     
-    def user_knowledge_exists(self, user_id: str) -> bool:
+    def user_graph_exists(self, user_id: str) -> bool:
         """
-        Check if a user's knowledge graph file exists.
+        Check if a user's graph file exists.
         
         Args:
             user_id: User identifier
@@ -88,49 +88,107 @@ class KGStorage(KGBase):
         """
         return KGConfig.get_user_file_path(user_id).exists()
     
-    # ===== Learning Path Storage =====
+    # Legacy method names for backward compatibility
+    def load_user_knowledge(self, user_id: str) -> Graph:
+        """Load user graph (alias for load_user_graph)."""
+        return self.load_user_graph(user_id)
     
-    def load_learning_path(self, thread_id: str) -> Graph:
+    def save_user_knowledge(self, user_id: str, graph: Graph) -> None:
+        """Save user graph (alias for save_user_graph)."""
+        self.save_user_graph(user_id, graph)
+    
+    def user_knowledge_exists(self, user_id: str) -> bool:
+        """Check if user graph exists (alias for user_graph_exists)."""
+        return self.user_graph_exists(user_id)
+    
+    # ===== Learning Path Storage (within user graph) =====
+    
+    def load_learning_path(self, user_id: str, thread_id: str) -> Graph:
         """
-        Load a learning path graph.
+        Load a specific learning path from a user's graph.
         
         Args:
+            user_id: User identifier who owns the learning path
             thread_id: Learning path thread identifier
             
         Returns:
-            Graph with learning path, or empty graph if file doesn't exist
+            Graph with only the specific learning path triples
         """
-        file_path = KGConfig.get_learning_path_file_path(thread_id)
-        graph = self.load_graph(file_path)
-        if graph is None:
-            logger.info(f"Learning path file not found for thread {thread_id}, returning empty graph")
-            return self.create_graph()
-        logger.info(f"Loaded learning path {thread_id} graph with {len(graph)} triples")
-        return graph
+        user_graph = self.load_user_graph(user_id)
+        
+        # Filter to only triples related to this learning path
+        from rdflib import URIRef, Namespace
+        paths_ns = Namespace(KGConfig.PATHS_NAMESPACE)
+        path_uri = paths_ns[thread_id]
+        
+        # Create a new graph with only this learning path's triples
+        path_graph = self.create_graph()
+        
+        # Get all triples where the path is subject
+        for s, p, o in user_graph.triples((path_uri, None, None)):
+            path_graph.add((s, p, o))
+        
+        # Get all triples where the path is object (e.g., user followsPath)
+        for s, p, o in user_graph.triples((None, None, path_uri)):
+            path_graph.add((s, p, o))
+        
+        logger.info(f"Loaded learning path {thread_id} for user {user_id} with {len(path_graph)} triples")
+        return path_graph
     
-    def save_learning_path(self, thread_id: str, graph: Graph) -> None:
+    def save_learning_path(self, user_id: str, thread_id: str, path_graph: Graph) -> None:
         """
-        Save a learning path graph.
+        Save or update a specific learning path within a user's graph.
+        This merges the path_graph into the user's existing graph.
         
         Args:
+            user_id: User identifier who owns the learning path
             thread_id: Learning path thread identifier
-            graph: Graph containing learning path
+            path_graph: Graph containing the learning path data
         """
-        file_path = KGConfig.get_learning_path_file_path(thread_id)
-        self.save_graph(graph, file_path)
-        logger.info(f"Saved learning path {thread_id} graph with {len(graph)} triples")
+        # Load existing user graph
+        user_graph = self.load_user_graph(user_id)
+        
+        # Remove existing triples for this learning path
+        from rdflib import URIRef, Namespace
+        paths_ns = Namespace(KGConfig.PATHS_NAMESPACE)
+        path_uri = paths_ns[thread_id]
+        
+        # Remove all triples where the path is subject
+        triples_to_remove = list(user_graph.triples((path_uri, None, None)))
+        for triple in triples_to_remove:
+            user_graph.remove(triple)
+        
+        # Merge the new path graph
+        for s, p, o in path_graph:
+            user_graph.add((s, p, o))
+        
+        # Save the updated user graph
+        self.save_user_graph(user_id, user_graph)
+        logger.info(f"Saved learning path {thread_id} for user {user_id} (total graph: {len(user_graph)} triples)")
     
-    def learning_path_exists(self, thread_id: str) -> bool:
+    def learning_path_exists(self, user_id: str, thread_id: str) -> bool:
         """
-        Check if a learning path graph file exists.
+        Check if a specific learning path exists in a user's graph.
         
         Args:
+            user_id: User identifier
             thread_id: Learning path thread identifier
             
         Returns:
-            True if file exists, False otherwise
+            True if learning path exists in user's graph, False otherwise
         """
-        return KGConfig.get_learning_path_file_path(thread_id).exists()
+        if not self.user_graph_exists(user_id):
+            return False
+        
+        user_graph = self.load_user_graph(user_id)
+        from rdflib import URIRef, Namespace
+        paths_ns = Namespace(KGConfig.PATHS_NAMESPACE)
+        path_uri = paths_ns[thread_id]
+        
+        # Check if any triples exist for this path
+        for _ in user_graph.triples((path_uri, None, None)):
+            return True
+        return False
     
     # ===== Ontology Storage =====
     
