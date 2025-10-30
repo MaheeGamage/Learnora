@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional, List
-from app.features.learning_path_planner.models import LearningPath
-from app.features.learning_path_planner.schemas import LearningPathCreate, LearningPathUpdate
+from app.features.learning_path.models import LearningPath
+from app.features.learning_path.schemas import LearningPathCreate, LearningPathUpdate
 
 
 async def create_learning_path(db: AsyncSession, learning_path: LearningPathCreate) -> LearningPath:

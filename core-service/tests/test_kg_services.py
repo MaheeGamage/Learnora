@@ -3,7 +3,7 @@
 import pytest
 from pathlib import Path
 from app.features.concept.service import ConceptService
-from app.features.learning_path_planner.service import LearningPathService
+from app.features.learning_path.service import LearningPathService
 from app.features.user_knowledge.service import UserKnowledgeService
 from app.kg.config import KGConfig
 

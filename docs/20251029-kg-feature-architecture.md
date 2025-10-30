@@ -33,7 +33,7 @@ app/features/
   │   └── service.py      # ConceptService
   ├── user_knowledge/     # NEW: User knowledge tracking
   │   └── service.py      # UserKnowledgeService
-  └── learning_path_planner/
+  └── learning_path/
       └── service.py      # Extended with KG operations
 ```
 
@@ -62,7 +62,7 @@ Tracks user knowledge and learning progress.
 
 **Storage:** `data/graph/instances/user_{user_id}.ttl`
 
-### LearningPathService (`app/features/learning_path_planner/service.py`)
+### LearningPathService (`app/features/learning_path/service.py`)
 Extended existing service with KG operations for learning paths.
 
 **New KG Methods:**
@@ -94,7 +94,7 @@ Located in `data/graph/instances/` (gitignored):
 
 ### 2. Singular Naming Convention
 **Examples:** `concept/`, `user_knowledge/` (not `concepts/`, `user_knowledges/`)  
-**Rationale:** Follows existing patterns in codebase (e.g., `learning_path_planner/`)
+**Rationale:** Follows existing patterns in codebase (e.g., `learning_path/`)
 
 ### 3. Service Files vs Router/CRUD/Models
 **Current:** Only `service.py` files created for KG features  
@@ -179,11 +179,7 @@ concept_service.add_concept("Python", "Python Programming")
    - Add `app/features/concept/schemas.py` with Pydantic models
    - Add `app/features/user_knowledge/schemas.py` with Pydantic models
 
-3. **Learning Path Refactor**
-   - Rename `learning_path_planner/` → `learning_path/` (singular)
-   - Align with naming convention
-
-4. **Query Optimization**
+3. **Query Optimization**
    - Add SPARQL query caching for frequently accessed data
    - Optimize prerequisite graph traversals
 

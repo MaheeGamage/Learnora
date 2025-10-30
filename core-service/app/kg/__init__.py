@@ -2,7 +2,7 @@
 
 This package provides low-level infrastructure for RDF operations.
 Feature-specific logic resides in app/features/concept/, app/features/user_knowledge/, 
-and app/features/learning_path_planner/.
+and app/features/learning_path/.
 """
 
 from app.kg.config import KGConfig

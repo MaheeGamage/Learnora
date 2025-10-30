@@ -193,7 +193,7 @@ core-service/
 │       │   ├── kg.py                        # User KG layer
 │       │   ├── service.py                   # User service
 │       │   └── router.py                    # User API
-│       └── learning_path_planner/
+│       └── learning_path/
 │           ├── kg.py                        # Path KG layer
 │           ├── service.py                   # Path service (enhanced)
 │           ├── router.py                    # Path API (enhanced)

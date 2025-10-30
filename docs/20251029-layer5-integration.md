@@ -227,7 +227,7 @@ Check if user knows a concept.
 app/
 ├── main.py                          # Router registration
 ├── features/
-│   ├── learning_path_planner/
+│   ├── learning_path/
 │   │   ├── router.py                # ✨ Enhanced with KG endpoint
 │   │   ├── service.py               # ✨ Enhanced with JSON-LD parsing
 │   │   ├── schemas.py               # ✨ Added KG response models

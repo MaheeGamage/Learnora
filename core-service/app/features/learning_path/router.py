@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.features.learning_path_planner.schemas import (
+from app.features.learning_path.schemas import (
     LearningPathCreate,
     StartRequest,
     ResumeRequest,
@@ -9,8 +9,8 @@ from app.features.learning_path_planner.schemas import (
     LearningPathResponse,
     LearningPathKGResponse
 )
-from app.features.learning_path_planner.service import LearningPathService
-from app.features.learning_path_planner import crud
+from app.features.learning_path.service import LearningPathService
+from app.features.learning_path import crud
 from typing import List
 
 router = APIRouter()

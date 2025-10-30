@@ -149,7 +149,7 @@ class UserKnowledgeService:
 - Limit number of concurrent learning concepts
 - Validate prerequisites are met before learning
 
-### LearningPathKG (`app/features/learning_path_planner/kg.py`)
+### LearningPathKG (`app/features/learning_path/kg.py`)
 ```python
 class LearningPathKG:
     """Knowledge Graph layer for learning path operations."""
@@ -169,7 +169,7 @@ class LearningPathKG:
 - `get_path_concepts()` - List concepts in path
 - `path_exists()` - Check if path exists
 
-### LearningPathService (`app/features/learning_path_planner/service.py`)
+### LearningPathService (`app/features/learning_path/service.py`)
 ```python
 class LearningPathService:
     """Service layer for learning paths with business logic."""
@@ -253,7 +253,7 @@ app/features/
 ├── user_knowledge/
 │   ├── kg.py               # UserKnowledgeKG
 │   └── service.py          # UserKnowledgeService
-└── learning_path_planner/
+└── learning_path/
     ├── kg.py               # LearningPathKG
     └── service.py          # LearningPathService
 ```

@@ -16,17 +16,29 @@ class LearningPathState(MessagesState):
     messages: Annotated[Sequence[BaseMessage], add_messages]
     topic: str | None = None
     
-# JSON-LD structure description for the AI
-JSONLD_STRUCTURE = """
-The output must be a valid JSON-LD knowledge graph with the following structure:
-- "@context": Defines the schema with "name", "requires" (prerequisite relationships), and namespace prefix
-- "@graph": Array of concept objects, where each object has:
-  - "@id": Unique identifier using the namespace prefix (e.g., "kg:concept-name")
-  - "@type": Always "Concept"
-  - "name": Human-readable name of the concept
-  - "requires": (optional) Array of "@id" references to prerequisite concepts
+# JSON structure description for the AI
+JSON_OUTPUT_FORMAT = """
+You must output ONLY a valid JSON array with NO additional text, explanation, or commentary.
+Your response must be a single JSON code block containing an array of concept objects.
 
-The graph should represent a learning path with concepts ordered by dependencies, where foundational concepts have no prerequisites and advanced concepts build upon them.
+REQUIRED FORMAT:
+[
+  {"concept": "ConceptName1", "prerequisites": []},
+  {"concept": "ConceptName2", "prerequisites": ["ConceptName1"]},
+  {"concept": "ConceptName3", "prerequisites": ["ConceptName1", "ConceptName2"]}
+]
+
+RULES:
+1. Each object must have exactly two fields: "concept" (string) and "prerequisites" (array of strings)
+2. The "concept" field contains the name of a learning concept
+3. The "prerequisites" array lists concept names that must be learned first (empty array if none)
+4. Foundational concepts have empty prerequisites arrays
+5. Advanced concepts list all direct prerequisites by their exact concept names
+6. Order concepts from foundational to advanced based on dependency chains
+7. Return ONLY the JSON array - no markdown formatting, no backticks, no explanation text
+
+EXAMPLE:
+[{"concept":"Variables","prerequisites":[]},{"concept":"Data Types","prerequisites":["Variables"]},{"concept":"Functions","prerequisites":["Variables","Data Types"]}]
 """
 
 # Define the initial assessment prompt
@@ -51,10 +63,17 @@ generation_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are an expert learning path designer. Based on the learner's profile, create a comprehensive learning path for {topic}. "
-            + JSONLD_STRUCTURE +
-            "\n\nIMPORTANT: Output ONLY the JSON-LD knowledge graph, no additional text or explanation. "
-            "Ensure the JSON is valid and properly formatted."
+            "You are an expert learning path designer. Based on the learner's profile and responses, create a comprehensive, well-structured learning path for {topic}. "
+            "\n\n" + JSON_OUTPUT_FORMAT +
+            "\n\nIMPORTANT INSTRUCTIONS:"
+            "\n1. Analyze the learner's knowledge level from the conversation"
+            "\n2. Design a learning path appropriate for their background"
+            "\n3. Break down {topic} into clear, logical concepts"
+            "\n4. Establish prerequisite relationships carefully - each concept should list ALL direct prerequisites"
+            "\n5. Ensure foundational concepts come first (empty prerequisites)"
+            "\n6. Create a progressive learning sequence from basics to advanced topics"
+            "\n7. Output ONLY the JSON array as specified above, with no extra text"
+            "\n\nYour response must contain ONLY the JSON array. Do not include any explanation, markdown formatting, or additional commentary."
         ),
         MessagesPlaceholder(variable_name="messages"),
     ]

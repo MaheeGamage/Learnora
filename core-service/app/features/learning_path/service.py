@@ -3,13 +3,13 @@ from uuid import uuid4
 from langchain_core.messages import HumanMessage, AIMessage
 from rdflib import Graph as RDFGraph, URIRef
 from typing import Optional
-from app.features.learning_path_planner import crud
-from app.features.learning_path_planner.schemas import (
+from app.features.learning_path import crud
+from app.features.learning_path.schemas import (
     LearningPathCreate, 
     LearningPathUpdate,
     GraphResponse
 )
-from app.features.learning_path_planner.kg import LearningPathKG
+from app.features.learning_path.kg import LearningPathKG
 from app.features.concept.service import ConceptService
 import logging
 import asyncio
@@ -32,7 +32,7 @@ class LearningPathService:
     def graph(self):
         """Lazy load the LangGraph to avoid initialization during testing."""
         if self._graph is None:
-            from app.features.learning_path_planner.graph import graph
+            from app.features.learning_path.graph import graph
             self._graph = graph
         return self._graph
     
