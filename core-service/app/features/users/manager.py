@@ -9,6 +9,8 @@ from app.features.users.database import get_user_db
 from app.config import settings
 import logging
 
+from app.features.users.kg import UserKG
+
 logger = logging.getLogger(__name__)
 
 # Secret key for JWT tokens
@@ -26,6 +28,11 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     async def on_after_register(self, user: User, request: Optional[Request] = None):
         """Called after successful user registration"""
         logger.info(f"User {user.id} ({user.email}) has registered.")
+        
+        # Create user KG file upon registration
+        user_kg = UserKG()
+        user_kg_instance = user_kg.create_user(user.id)
+        logger.info(f"Created KG for user {user_kg_instance}.")
 
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None

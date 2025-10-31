@@ -6,7 +6,7 @@ from typing import Literal
 class Settings(BaseSettings):
     # App settings
     APP_ENV: Literal["development", "staging", "production"] = "development"
-    DEBUG: bool = True
+    DEBUG: bool = False
     APP_NAME: str = "Learnora Core Service"
     VERSION: str = "0.1.0"
     
