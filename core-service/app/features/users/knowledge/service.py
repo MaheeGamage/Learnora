@@ -1,7 +1,7 @@
 """User Knowledge service - business logic for user knowledge operations."""
 
 from rdflib import URIRef
-from app.features.user_knowledge.kg import UserKnowledgeKG
+from app.features.users.knowledge.kg import UserKnowledgeKG
 import logging
 
 logger = logging.getLogger(__name__)

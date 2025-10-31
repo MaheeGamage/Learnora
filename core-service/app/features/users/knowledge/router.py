@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
-from app.features.user_knowledge.service import UserKnowledgeService
+from app.features.users.knowledge.service import UserKnowledgeService
 
 router = APIRouter()
 service = UserKnowledgeService()
