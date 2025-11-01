@@ -10,7 +10,7 @@ from app.features.learning_path.schemas import (
     LearningPathUpdate,
     GraphResponse
 )
-from app.features.learning_path.kg import LearningPathKG
+# from app.features.learning_path.kg import LearningPathKG
 from app.features.concept.service import ConceptService
 from app.features.learning_path.utils import (
     extract_json_array_from_message,
@@ -30,7 +30,7 @@ class LearningPathService:
     
     def __init__(self):
         """Initialize learning path service with KG layer."""
-        self.kg = LearningPathKG()
+        # self.kg = LearningPathKG()
         self.concept_service = ConceptService()
         self._graph = None  # Lazy load the LangGraph
     
@@ -44,118 +44,118 @@ class LearningPathService:
     
     # ===== Knowledge Graph Operations =====
     
-    def create_learning_path_kg(
-        self,
-        user_id: str,
-        thread_id: str,
-        topic: str,
-        concept_ids: list[str]
-    ) -> URIRef:
-        """
-        Create a new learning path in the Knowledge Graph.
+    # def create_learning_path_kg(
+    #     self,
+    #     user_id: str,
+    #     thread_id: str,
+    #     topic: str,
+    #     concept_ids: list[str]
+    # ) -> URIRef:
+    #     """
+    #     Create a new learning path in the Knowledge Graph.
         
-        Business logic: Validates path doesn't exist, validates concepts exist.
+    #     Business logic: Validates path doesn't exist, validates concepts exist.
         
-        Args:
-            user_id: User identifier who owns this learning path
-            thread_id: Unique thread identifier
-            topic: The learning topic/goal
-            concept_ids: List of concept IDs to include in the path
+    #     Args:
+    #         user_id: User identifier who owns this learning path
+    #         thread_id: Unique thread identifier
+    #         topic: The learning topic/goal
+    #         concept_ids: List of concept IDs to include in the path
             
-        Returns:
-            URIRef of the created learning path
-        """
-        # Business validation: check if path already exists
-        if self.kg.path_exists(user_id, thread_id):
-            logger.warning(f"Learning path {thread_id} already exists for user {user_id}")
-            # Could raise an exception or return existing path depending on requirements
+    #     Returns:
+    #         URIRef of the created learning path
+    #     """
+    #     # Business validation: check if path already exists
+    #     if self.kg.path_exists(user_id, thread_id):
+    #         logger.warning(f"Learning path {thread_id} already exists for user {user_id}")
+    #         # Could raise an exception or return existing path depending on requirements
         
-        # Delegate to KG layer
-        path = self.kg.create_path(user_id, thread_id, topic, concept_ids)
-        logger.info(f"Created learning path: {thread_id} for user {user_id} with {len(concept_ids)} concepts")
-        return path
+    #     # Delegate to KG layer
+    #     path = self.kg.create_path(user_id, thread_id, topic, concept_ids)
+    #     logger.info(f"Created learning path: {thread_id} for user {user_id} with {len(concept_ids)} concepts")
+    #     return path
     
-    def get_learning_path_kg(self, user_id: str, thread_id: str) -> Optional[RDFGraph]:
-        """
-        Get a learning path graph from KG.
+    # def get_learning_path_kg(self, user_id: str, thread_id: str) -> Optional[RDFGraph]:
+    #     """
+    #     Get a learning path graph from KG.
         
-        Args:
-            user_id: User identifier who owns the path
-            thread_id: The thread identifier
+    #     Args:
+    #         user_id: User identifier who owns the path
+    #         thread_id: The thread identifier
             
-        Returns:
-            RDFGraph containing the learning path, or empty graph if not found
-        """
-        return self.kg.get_path(user_id, thread_id)
+    #     Returns:
+    #         RDFGraph containing the learning path, or empty graph if not found
+    #     """
+    #     return self.kg.get_path(user_id, thread_id)
     
-    def get_learning_path_concepts(self, user_id: str, thread_id: str) -> list[URIRef]:
-        """
-        Get all concepts in a learning path from KG.
+    # def get_learning_path_concepts(self, user_id: str, thread_id: str) -> list[URIRef]:
+    #     """
+    #     Get all concepts in a learning path from KG.
         
-        Args:
-            user_id: User identifier who owns the path
-            thread_id: The thread identifier
+    #     Args:
+    #         user_id: User identifier who owns the path
+    #         thread_id: The thread identifier
             
-        Returns:
-            List of concept URIRefs in the learning path
-        """
-        return self.kg.get_path_concepts(user_id, thread_id)
+    #     Returns:
+    #         List of concept URIRefs in the learning path
+    #     """
+    #     return self.kg.get_path_concepts(user_id, thread_id)
     
-    async def get_learning_path_kg_info(self, db: AsyncSession, thread_id: str) -> Optional[dict]:
-        """
-        Get knowledge graph information for a learning path in API-friendly format.
+    # async def get_learning_path_kg_info(self, db: AsyncSession, thread_id: str) -> Optional[dict]:
+    #     """
+    #     Get knowledge graph information for a learning path in API-friendly format.
         
-        Args:
-            db: Database session
-            thread_id: The conversation thread identifier
+    #     Args:
+    #         db: Database session
+    #         thread_id: The conversation thread identifier
             
-        Returns:
-            Dictionary with learning path KG info or None if not found
-        """
-        # Get from database
-        db_path = await crud.get_learning_path_by_thread_id(db, thread_id)
-        if not db_path:
-            return None
+    #     Returns:
+    #         Dictionary with learning path KG info or None if not found
+    #     """
+    #     # Get from database
+    #     db_path = await crud.get_learning_path_by_thread_id(db, thread_id)
+    #     if not db_path:
+    #         return None
         
-        # Get user_id from database record
-        user_id = str(db_path.user_id)
+    #     # Get user_id from database record
+    #     user_id = str(db_path.user_id)
         
-        # Check if KG data exists
-        if not self.kg.path_exists(user_id, thread_id):
-            return {
-                "thread_id": thread_id,
-                "topic": db_path.topic,
-                "concepts": [],
-                "concept_count": 0
-            }
+    #     # Check if KG data exists
+    #     if not self.kg.path_exists(user_id, thread_id):
+    #         return {
+    #             "thread_id": thread_id,
+    #             "topic": db_path.topic,
+    #             "concepts": [],
+    #             "concept_count": 0
+    #         }
         
-        # Get concepts from KG
-        concept_uris = await asyncio.to_thread(self.get_learning_path_concepts, user_id, thread_id)
+    #     # Get concepts from KG
+    #     concept_uris = await asyncio.to_thread(self.get_learning_path_concepts, user_id, thread_id)
         
-        # Format concept information
-        concepts_info = []
-        for concept_uri in concept_uris:
-            concept_id = str(concept_uri).split("#")[-1]
+    #     # Format concept information
+    #     concepts_info = []
+    #     for concept_uri in concept_uris:
+    #         concept_id = str(concept_uri).split("#")[-1]
             
-            # Get prerequisites
-            prereq_uris = await asyncio.to_thread(
-                self.concept_service.get_concept_prerequisites,
-                concept_id
-            )
-            prereq_ids = [str(p).split("#")[-1] for p in prereq_uris]
+    #         # Get prerequisites
+    #         prereq_uris = await asyncio.to_thread(
+    #             self.concept_service.get_concept_prerequisites,
+    #             concept_id
+    #         )
+    #         prereq_ids = [str(p).split("#")[-1] for p in prereq_uris]
             
-            concepts_info.append({
-                "id": concept_id,
-                "label": concept_id.replace("_", " ").title(),
-                "prerequisites": prereq_ids
-            })
+    #         concepts_info.append({
+    #             "id": concept_id,
+    #             "label": concept_id.replace("_", " ").title(),
+    #             "prerequisites": prereq_ids
+    #         })
         
-        return {
-            "thread_id": thread_id,
-            "topic": db_path.topic,
-            "concepts": concepts_info,
-            "concept_count": len(concepts_info)
-        }
+    #     return {
+    #         "thread_id": thread_id,
+    #         "topic": db_path.topic,
+    #         "concepts": concepts_info,
+    #         "concept_count": len(concepts_info)
+    #     }
     
     # ===== LangGraph Operations =====
     

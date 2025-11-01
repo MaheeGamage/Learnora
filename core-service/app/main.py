@@ -10,7 +10,6 @@ load_dotenv()
 from app.config import settings
 from app.features.learning_path.router import router as learning_path_router
 from app.features.concept.router import router as concept_router
-from app.features.users.knowledge.router import router as user_knowledge_router
 from app.features.users.router import router as users_router
 from app.database import init_db
 
@@ -64,12 +63,6 @@ app.include_router(
     concept_router,
     prefix=f"{settings.API_V1_PREFIX}/concepts",
     tags=["concepts"]
-)
-
-app.include_router(
-    user_knowledge_router,
-    prefix=f"{settings.API_V1_PREFIX}/user-knowledge",
-    tags=["user-knowledge"]
 )
 
 # Register user/auth router

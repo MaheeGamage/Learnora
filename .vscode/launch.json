@@ -16,6 +16,24 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}/core-service/app"
       }
+    },
+    {
+      "name": "Debug Pytest - test_sample.py",
+      "type": "debugpy",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}/core-service",
+      "module": "pytest",
+      "args": [
+        "${file}",
+        "-v",
+        "-s",
+        "--tb=short"
+      ],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/core-service"
+      }
     }
   ]
 }

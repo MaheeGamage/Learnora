@@ -1,8 +1,7 @@
 """Knowledge Graph package for RDF-based storage and reasoning.
 
 This package provides low-level infrastructure for RDF operations.
-Feature-specific logic resides in app/features/concept/, app/features/user_knowledge/, 
-and app/features/learning_path/.
+Feature-specific logic resides in feature/ folder.
 """
 
 from app.kg.config import KGConfig

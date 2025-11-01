@@ -13,9 +13,7 @@ class KGBase:
     def __init__(self):
         """Initialize base namespaces."""
         # Define namespaces
-        self.KG = Namespace(KGConfig.KG_NAMESPACE)
-        self.USERS = Namespace(KGConfig.USERS_NAMESPACE)
-        self.PATHS = Namespace(KGConfig.PATHS_NAMESPACE)
+        self.ONT = Namespace(KGConfig.ONTOLOGY_NAMESPACE)
         
         # Standard namespaces
         self.RDF = RDF
@@ -28,9 +26,7 @@ class KGBase:
         g = Graph()
         
         # Bind namespaces
-        g.bind("kg", self.KG)
-        g.bind("users", self.USERS)
-        g.bind("paths", self.PATHS)
+        g.bind("ont", self.ONT)
         g.bind("rdf", self.RDF)
         g.bind("rdfs", self.RDFS)
         g.bind("owl", self.OWL)

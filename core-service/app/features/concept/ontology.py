@@ -27,17 +27,17 @@ class ConceptOntology(KGBase):
         Returns:
             URIRef of the created concept
         """
-        concept = URIRef(self.KG[concept_id])
+        concept = URIRef(self.ONT[concept_id])
         
         # Add type
-        graph.add((concept, RDF.type, self.KG.Concept))
+        graph.add((concept, RDF.type, self.ONT.Concept))
         
         # Add label
-        graph.add((concept, self.KG.label, Literal(label)))
+        graph.add((concept, self.ONT.label, Literal(label)))
         
         # Add optional properties
         if description:
-            graph.add((concept, self.KG.description, Literal(description)))
+            graph.add((concept, self.ONT.description, Literal(description)))
         
         return concept
     
@@ -52,7 +52,7 @@ class ConceptOntology(KGBase):
             concept: The advanced concept that has a prerequisite
             prerequisite: The foundational prerequisite concept
         """
-        graph.add((concept, self.KG.hasPrerequisite, prerequisite))
+        graph.add((concept, self.ONT.hasPrerequisite, prerequisite))
     
     def get_concept_by_id(self, graph: Graph, concept_id: str) -> URIRef:
         """
@@ -65,7 +65,7 @@ class ConceptOntology(KGBase):
         Returns:
             URIRef of the concept
         """
-        return URIRef(self.KG[concept_id])
+        return URIRef(self.ONT[concept_id])
     
     def get_all_concepts(self, graph: Graph) -> list[URIRef]:
         """
@@ -83,7 +83,7 @@ class ConceptOntology(KGBase):
                 ?concept rdf:type kg:Concept .
             }
         """
-        results = graph.query(query, initNs={'rdf': RDF, 'kg': self.KG})
+        results = graph.query(query, initNs={'rdf': RDF, 'kg': self.ONT})
         return [row.concept for row in results]
     
     def get_prerequisites(self, graph: Graph, concept: URIRef) -> list[URIRef]:
@@ -106,6 +106,6 @@ class ConceptOntology(KGBase):
         results = graph.query(
             query,
             initBindings={'concept': concept},
-            initNs={'kg': self.KG}
+            initNs={'kg': self.ONT}
         )
         return [row.prereq for row in results]

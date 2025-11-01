@@ -3,8 +3,9 @@
 from rdflib import URIRef
 from typing import Optional
 from app.kg.storage import KGStorage
-from app.kg.ontologies import ConceptOntology
 import logging
+
+from app.features.concept.ontology import ConceptOntology
 
 logger = logging.getLogger(__name__)
 
