@@ -20,7 +20,7 @@ service = LearningPathService()
 @router.post("/start", response_model=GraphResponse)
 async def start_graph(request: StartRequest, db: AsyncSession = Depends(get_db)):
     """Start a new learning path"""
-    return await service.start_learning_path(db, request.learning_topic)
+    return await service.start_learning_path(request.learning_topic)
 
 
 @router.post("/resume", response_model=GraphResponse)
