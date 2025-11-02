@@ -28,7 +28,7 @@ async def start_chat(request: ChatRequest,  db: AsyncSession = Depends(get_db), 
         )
     
     try:
-        response = service.invoke_graph(
+        response = await service.invoke_graph(
             db=db,
             message=request.message,
             thread_id=None,
@@ -58,7 +58,7 @@ async def continue_chat(thread_id: str, request: ChatRequest, db: AsyncSession =
     Topic is optional as it's already set in the conversation state.
     """
     try:
-        response = service.invoke_graph(
+        response = await service.invoke_graph(
             db=db,
             user=user,
             message=request.message,

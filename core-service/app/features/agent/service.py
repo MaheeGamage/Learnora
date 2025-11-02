@@ -53,7 +53,7 @@ class AgentService:
             # Resuming an existing conversation
             return GraphStage.RESUME_CONVERSATION, thread_id
 
-    def invoke_graph(
+    async def invoke_graph(
         self,
         db: AsyncSession,
         user: User,
@@ -130,14 +130,14 @@ class AgentService:
                 
                 if learning_path_json:
                     # Saving learning path to DB and storage if completed
-                    db_learning_path = self.learning_path_service.parse_and_save_learning_path(
+                    db_learning_path = await self.learning_path_service.parse_and_save_learning_path(
                         db=db,
                         json_data=learning_path_json,
                         topic=current_topic,
                         user=user
                     )
                     # Convert SQLAlchemy model to Pydantic schema
-                    learning_path_response = LearningPathResponse.model_validate(db_learning_path)
+                    # learning_path_response = LearningPathResponse.model_validate(db_learning_path)
             
             return ChatResponse(
                 thread_id=resolved_thread_id,

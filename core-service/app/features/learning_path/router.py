@@ -78,3 +78,42 @@ async def delete_learning_path(
     if not deleted:
         raise HTTPException(status_code=404, detail=LEARNING_PATH_NOT_FOUND)
     return None
+
+
+# ===== TEST ENDPOINT - DELETE THIS SECTION LATER =====
+# This section can be deleted after testing parse_and_save_learning_path
+
+from pydantic import BaseModel
+from typing import Dict, Any
+
+class TestParseRequest(BaseModel):
+    """Test request schema for parse_and_save_learning_path."""
+    topic: str
+    concepts: List[Dict[str, Any]]
+
+@router.post("/test/parse-and-save", response_model=LearningPathResponse, status_code=201)
+async def test_parse_and_save_learning_path(
+    request: TestParseRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user)
+):
+    """
+    TEST ENDPOINT - Parse JSON concepts and save learning path to RDF + DB.
+    
+    This endpoint tests the complete flow:
+    1. Convert JSON concepts to RDF graph
+    2. Add user and learning path triples
+    3. Save RDF graph to file
+    4. Create database record
+    
+    DELETE THIS ENDPOINT AFTER TESTING!
+    """
+    result = await service.parse_and_save_learning_path(
+        db=db,
+        json_data=request.concepts,
+        topic=request.topic,
+        user=current_user
+    )
+    return result
+
+# ===== END TEST SECTION =====

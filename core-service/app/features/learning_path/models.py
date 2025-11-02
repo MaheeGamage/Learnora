@@ -7,7 +7,7 @@ class LearningPath(BaseModel):
     __tablename__ = "learning_path"
 
     topic = Column(String(255), nullable=False)
-    graph_uri = Column(String(255), nullable=True, unique=True)
+    graph_uri = Column(String(255), nullable=True, unique=False)
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     user = relationship("User")
 
