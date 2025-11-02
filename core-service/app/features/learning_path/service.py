@@ -1,5 +1,5 @@
 import re
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 from langchain_core.messages import HumanMessage, AIMessage
@@ -25,6 +25,8 @@ from app.features import learning_path
 from app.kg.storage import KGStorage
 from app.util.string_util import normalize_string
 from app.kg.base import KGBase
+from app.features.users.models import User
+from app.features.users.users import current_active_user
 
 logger = logging.getLogger(__name__)
 
@@ -182,20 +184,22 @@ class LearningPathService:
             thread_id=conversation_thread_id,
             messages=message_threads
         )
-    
-    async def resume_learning_path(self, db: AsyncSession, thread_id: str, human_answer: str, user_id: str = "default_user") -> GraphResponse:
+
+    async def resume_learning_path(self, db: AsyncSession, thread_id: str, human_answer: str, db_user: User) -> GraphResponse:
         """Resume an existing learning path
         
         Args:
             db: Database session
             thread_id: The conversation thread identifier
             human_answer: Human's answer to the previous question
-            user_id: User identifier (default: "default_user" until DB migration adds user_id field)
+            user: The current active user
         
         Returns:
             GraphResponse with updated conversation
         """
-        
+
+        logger.info(f"Resuming learning path for user: {db_user.id}")
+
         config = {"configurable": {"thread_id": thread_id}}
         state = {"messages": [HumanMessage(content=human_answer)]}
         
@@ -219,9 +223,17 @@ class LearningPathService:
                     topic = "sample topic"  # TODO: Retrieve actual topic from conversation state
 
                     graph, learning_path_uri = self.convert_learning_path_json_to_rdf_graph(learning_path_json, topic)
-                    self.storage.save_user_graph(user_id, graph)
                     
-                    logger.info(f"Extracted and stored {len(learning_path_json)} concepts for thread {thread_id}, user {user_id}")
+                    # Create user triplets if not already existing
+                    user_uri = self.kg_base.ONT[normalize_string(f"user_{db_user.id}")]
+                    # Check if user exists by querying for any triple with user_uri as subject and type User
+                    if (user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User) not in graph:
+                        graph.add((user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User))
+                        graph.add((user_uri, self.kg_base.ONT.followsPath, learning_path_uri))
+
+                    self.storage.save_user_graph(str(db_user.id), graph)
+
+                    logger.info(f"Extracted and stored {len(learning_path_json)} concepts for thread {thread_id}, user {db_user.id}")
                 else:
                     raise HTTPException(
                             status_code=500, 

@@ -12,6 +12,8 @@ from app.features.learning_path.schemas import (
 from app.features.learning_path.service import LearningPathService
 from app.features.learning_path import crud
 from typing import List
+from app.features.users.models import User
+from app.features.users.users import current_active_user
 
 router = APIRouter()
 service = LearningPathService()
@@ -24,11 +26,11 @@ async def start_graph(request: StartRequest, db: AsyncSession = Depends(get_db))
 
 
 @router.post("/resume", response_model=GraphResponse)
-async def resume_graph(request: ResumeRequest, db: AsyncSession = Depends(get_db)):
+async def resume_graph(request: ResumeRequest, db: AsyncSession = Depends(get_db), user: User = Depends(current_active_user)):
     """Resume an existing learning path"""
     try:
         return await service.resume_learning_path(
-            db, request.thread_id, request.human_answer
+            db, request.thread_id, request.human_answer, db_user=user
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
