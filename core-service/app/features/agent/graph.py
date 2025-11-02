@@ -34,8 +34,9 @@ RULES:
 3. The "prerequisites" array lists concept names that must be learned first (empty array if none)
 4. Foundational concepts have empty prerequisites arrays
 5. Advanced concepts list all direct prerequisites by their exact concept names
-6. Order concepts from foundational to advanced based on dependency chains
-7. Return ONLY the JSON array - no markdown formatting, no backticks, no explanation text
+6. Keep number of concepts between 8-15 for a comprehensive path
+7. Order concepts from foundational to advanced based on dependency chains
+8. Return ONLY the JSON array - no markdown formatting, no backticks, no explanation text
 
 EXAMPLE:
 [{{"concept":"Variables","prerequisites":[]}},{{"concept":"Data Types","prerequisites":["Variables"]}},{{"concept":"Functions","prerequisites":["Variables","Data Types"]}}]

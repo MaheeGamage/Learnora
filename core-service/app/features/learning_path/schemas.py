@@ -21,21 +21,21 @@ class GraphResponse(BaseModel):
 # Database schemas
 class LearningPathBase(BaseModel):
     topic: str
-    graph_uri: Optional[str]
     user_id: int
 
 class LearningPathCreate(LearningPathBase):
-    pass
+    graph_uri: Optional[str] = None
 
 class LearningPathUpdate(BaseModel):
     topic: Optional[str] = None
+    graph_uri: Optional[str] = None
 
 
 class LearningPathResponse(LearningPathBase):
     id: int
-    conversation_thread_id: List[str]
+    graph_uri: Optional[str] = None
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True

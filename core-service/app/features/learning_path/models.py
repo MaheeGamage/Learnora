@@ -1,4 +1,4 @@
-from sqlalchemy import ARRAY, Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey
 from app.database.base import BaseModel
 from sqlalchemy.orm import relationship
 
@@ -9,7 +9,7 @@ class LearningPath(BaseModel):
     topic = Column(String(255), nullable=False)
     graph_uri = Column(String(255), nullable=True, unique=True)
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    # user = relationship("User")
+    user = relationship("User")
 
     def __repr__(self):
-        return f"<LearningPath(id={self.id}, topic={self.topic}, conversation_thread_id={self.conversation_thread_id}, graph_uri={self.graph_uri}, user_id={self.user_id})>"
+        return f"<LearningPath(id={self.id}, topic={self.topic}, graph_uri={self.graph_uri}, user_id={self.user_id})>"

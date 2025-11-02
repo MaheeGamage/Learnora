@@ -1,17 +1,17 @@
 import re
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 from langchain_core.messages import HumanMessage, AIMessage
 from rdflib import RDF, Graph as RDFGraph, URIRef
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from app.features.learning_path import crud
 from app.features.learning_path.schemas import (
     LearningPathCreate, 
     LearningPathUpdate,
     GraphResponse
 )
-# from app.features.learning_path.kg import LearningPathKG
+from app.features.learning_path.models import LearningPath
 from app.features.concept.service import ConceptService
 from app.features.learning_path.utils import (
     extract_json_array_from_message,
@@ -26,8 +26,6 @@ from app.kg.storage import KGStorage
 from app.util.string_util import normalize_string
 from app.kg.base import KGBase
 from app.features.users.models import User
-from app.features.users.users import current_active_user
-# from app.features.agent.graph import graph
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +35,6 @@ class LearningPathService:
     
     def __init__(self):
         """Initialize learning path service with KG layer."""
-        # self.kg = LearningPathKG()
         self.concept_service = ConceptService()
         self._graph = None  # Lazy load the LangGraph
         self.kg_base = KGBase()
@@ -51,203 +48,85 @@ class LearningPathService:
             self._graph = graph
         return self._graph
     
+    # ===== CRUD Operations =====
+    
+    async def create_learning_path(
+        self, 
+        db: AsyncSession, 
+        learning_path: LearningPathCreate, 
+        current_user: User
+    ) -> LearningPath:
+        """Create a new learning path with authorization check."""
+        # Ensure user_id matches current user
+        if learning_path.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to create learning path for another user")
+        
+        return await crud.create_learning_path(db, learning_path)
+    
+    async def get_learning_path(
+        self, 
+        db: AsyncSession, 
+        learning_path_id: int, 
+        current_user: User
+    ) -> Optional[LearningPath]:
+        """Get a learning path by ID with authorization check."""
+        learning_path = await crud.get_learning_path_by_id(db, learning_path_id)
+        
+        if learning_path and learning_path.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to access this learning path")
+        
+        return learning_path
+    
+    async def get_all_learning_paths(
+        self, 
+        db: AsyncSession, 
+        skip: int = 0, 
+        limit: int = 100
+    ) -> List[LearningPath]:
+        """Get all learning paths with pagination."""
+        return await crud.get_all_learning_paths(db, skip, limit)
+    
+    async def update_learning_path(
+        self, 
+        db: AsyncSession, 
+        learning_path_id: int, 
+        update_data: LearningPathUpdate, 
+        current_user: User
+    ) -> Optional[LearningPath]:
+        """Update a learning path with authorization check."""
+        learning_path = await crud.get_learning_path_by_id(db, learning_path_id)
+        
+        if not learning_path:
+            return None
+        
+        if learning_path.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to update this learning path")
+        
+        return await crud.update_learning_path(db, learning_path_id, update_data)
+    
+    async def delete_learning_path(
+        self, 
+        db: AsyncSession, 
+        learning_path_id: int, 
+        current_user: User
+    ) -> bool:
+        """Delete a learning path with authorization check."""
+        learning_path = await crud.get_learning_path_by_id(db, learning_path_id)
+        
+        if not learning_path:
+            return False
+        
+        if learning_path.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to delete this learning path")
+        
+        return await crud.delete_learning_path(db, learning_path_id)
+    
     # ===== Knowledge Graph Operations =====
     
-    # def create_learning_path_kg(
-    #     self,
-    #     user_id: str,
-    #     thread_id: str,
-    #     topic: str,
-    #     concept_ids: list[str]
-    # ) -> URIRef:
-    #     """
-    #     Create a new learning path in the Knowledge Graph.
-        
-    #     Business logic: Validates path doesn't exist, validates concepts exist.
-        
-    #     Args:
-    #         user_id: User identifier who owns this learning path
-    #         thread_id: Unique thread identifier
-    #         topic: The learning topic/goal
-    #         concept_ids: List of concept IDs to include in the path
-            
-    #     Returns:
-    #         URIRef of the created learning path
-    #     """
-    #     # Business validation: check if path already exists
-    #     if self.kg.path_exists(user_id, thread_id):
-    #         logger.warning(f"Learning path {thread_id} already exists for user {user_id}")
-    #         # Could raise an exception or return existing path depending on requirements
-        
-    #     # Delegate to KG layer
-    #     path = self.kg.create_path(user_id, thread_id, topic, concept_ids)
-    #     logger.info(f"Created learning path: {thread_id} for user {user_id} with {len(concept_ids)} concepts")
-    #     return path
     
-    # def get_learning_path_kg(self, user_id: str, thread_id: str) -> Optional[RDFGraph]:
-    #     """
-    #     Get a learning path graph from KG.
-        
-    #     Args:
-    #         user_id: User identifier who owns the path
-    #         thread_id: The thread identifier
-            
-    #     Returns:
-    #         RDFGraph containing the learning path, or empty graph if not found
-    #     """
-    #     return self.kg.get_path(user_id, thread_id)
-    
-    # def get_learning_path_concepts(self, user_id: str, thread_id: str) -> list[URIRef]:
-    #     """
-    #     Get all concepts in a learning path from KG.
-        
-    #     Args:
-    #         user_id: User identifier who owns the path
-    #         thread_id: The thread identifier
-            
-    #     Returns:
-    #         List of concept URIRefs in the learning path
-    #     """
-    #     return self.kg.get_path_concepts(user_id, thread_id)
-    
-    # async def get_learning_path_kg_info(self, db: AsyncSession, thread_id: str) -> Optional[dict]:
-    #     """
-    #     Get knowledge graph information for a learning path in API-friendly format.
-        
-    #     Args:
-    #         db: Database session
-    #         thread_id: The conversation thread identifier
-            
-    #     Returns:
-    #         Dictionary with learning path KG info or None if not found
-    #     """
-    #     # Get from database
-    #     db_path = await crud.get_learning_path_by_thread_id(db, thread_id)
-    #     if not db_path:
-    #         return None
-        
-    #     # Get user_id from database record
-    #     user_id = str(db_path.user_id)
-        
-    #     # Check if KG data exists
-    #     if not self.kg.path_exists(user_id, thread_id):
-    #         return {
-    #             "thread_id": thread_id,
-    #             "topic": db_path.topic,
-    #             "concepts": [],
-    #             "concept_count": 0
-    #         }
-        
-    #     # Get concepts from KG
-    #     concept_uris = await asyncio.to_thread(self.get_learning_path_concepts, user_id, thread_id)
-        
-    #     # Format concept information
-    #     concepts_info = []
-    #     for concept_uri in concept_uris:
-    #         concept_id = str(concept_uri).split("#")[-1]
-            
-    #         # Get prerequisites
-    #         prereq_uris = await asyncio.to_thread(
-    #             self.concept_service.get_concept_prerequisites,
-    #             concept_id
-    #         )
-    #         prereq_ids = [str(p).split("#")[-1] for p in prereq_uris]
-            
-    #         concepts_info.append({
-    #             "id": concept_id,
-    #             "label": concept_id.replace("_", " ").title(),
-    #             "prerequisites": prereq_ids
-    #         })
-        
-    #     return {
-    #         "thread_id": thread_id,
-    #         "topic": db_path.topic,
-    #         "concepts": concepts_info,
-    #         "concept_count": len(concepts_info)
-    #     }
-    
-    # ===== LangGraph Operations =====
-    
-    # async def start_learning_path(self, topic: str) -> GraphResponse:
-    #     """Start a new learning path"""
-    #     # Generate unique thread ID for the conversation
-    #     conversation_thread_id = str(uuid4())
-    #     config = {"configurable": {"thread_id": conversation_thread_id}}
-    #     initial_state = {"topic": topic}
-        
-    #     # Run graph (sync code - run in thread pool to avoid blocking)
-    #     result = await asyncio.to_thread(self.graph.invoke, initial_state, config)
-    #     message_threads = result.get("messages", {})
-        
-    #     logger.info(f"Started learning path with conversation_thread_id: {conversation_thread_id}")
-        
-    #     return GraphResponse(
-    #         thread_id=conversation_thread_id,
-    #         messages=message_threads
-    #     )
-
-    # async def resume_learning_path(self, db: AsyncSession, thread_id: str, human_answer: str, db_user: User) -> GraphResponse:
-    #     """Resume an existing learning path
-        
-    #     Args:
-    #         db: Database session
-    #         thread_id: The conversation thread identifier
-    #         human_answer: Human's answer to the previous question
-    #         user: The current active user
-        
-    #     Returns:
-    #         GraphResponse with updated conversation
-    #     """
-
-    #     logger.info(f"Resuming learning path for user: {db_user.id}")
-
-    #     config = {"configurable": {"thread_id": thread_id}}
-    #     state = {"messages": [HumanMessage(content=human_answer)]}
-        
-    #     # Update graph state (sync code - run in thread pool)
-    #     await asyncio.to_thread(self.graph.update_state, config, state)
-        
-    #     # Run graph (sync code - run in thread pool)
-    #     result = await asyncio.to_thread(self.graph.invoke, None, config)
-    #     message_threads = result.get("messages", {})
-        
-    #     # Check if this was the final step (learning path generation)
-    #     # The last message should contain the JSON array of concepts
-    #     if message_threads and len(message_threads) > 0:
-    #         last_message = message_threads[-1]
-    #         if isinstance(last_message, AIMessage):
-    #             # Extract the JSON output and save to variable
-    #             learning_path_json = extract_json_array_from_message(last_message.content)
-
-    #             if learning_path_json:
-    #                 # Store the extracted concepts in KG using the conversation thread ID
-    #                 topic = "sample topic"  # TODO: Retrieve actual topic from conversation state
-
-    #                 graph, learning_path_uri = self.convert_learning_path_json_to_rdf_graph(learning_path_json, topic)
-                    
-    #                 # Create user triplets if not already existing
-    #                 user_uri = self.kg_base.ONT[normalize_string(f"user_{db_user.id}")]
-    #                 # Check if user exists by querying for any triple with user_uri as subject and type User
-    #                 if (user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User) not in graph:
-    #                     graph.add((user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User))
-    #                     graph.add((user_uri, self.kg_base.ONT.followsPath, learning_path_uri))
-
-    #                 self.storage.save_user_graph(str(db_user.id), graph)
-
-    #                 logger.info(f"Extracted and stored {len(learning_path_json)} concepts for thread {thread_id}, user {db_user.id}")
-    #             else:
-    #                 raise HTTPException(
-    #                         status_code=500, 
-    #                         detail="Learning path generation failed. Could not extract valid JSON from AI response."
-    #                     )
-        
-    #     logger.info(f"Resumed learning path with conversation_thread_id: {thread_id}")
-        
-    #     return GraphResponse(
-    #         thread_id=thread_id,
-    #         messages=message_threads
-    #     )
-        
+  
+    # ===== Helper Methods =====
+          
     def convert_learning_path_json_to_rdf_graph(self, json_data: List[Dict[str, Any]], topic: str) -> Tuple[RDFGraph, URIRef]:
         """
         Convert JSON-based learning graph to RDF graph and save it.
@@ -314,7 +193,7 @@ class LearningPathService:
             LearningPathCreate(
                 user_id=user.id,
                 topic=topic,
-                # graph_uri=str(learning_path_uri)
+                graph_uri=str(learning_path_uri)
             )
         )
         

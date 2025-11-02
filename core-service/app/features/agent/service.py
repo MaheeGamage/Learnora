@@ -137,14 +137,14 @@ class AgentService:
                         user=user
                     )
                     # Convert SQLAlchemy model to Pydantic schema
-                    # learning_path_response = LearningPathResponse.model_validate(db_learning_path)
+                    learning_path_response = LearningPathResponse.model_validate(db_learning_path)
             
             return ChatResponse(
                 thread_id=resolved_thread_id,
                 status=status,
                 messages=formatted_messages,
                 topic=current_topic,
-                # learning_path=learning_path_response
+                learning_path=learning_path_response
             )
 
         except Exception as e:
