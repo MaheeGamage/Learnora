@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional, Any, List, Literal
 
+from app.features.learning_path.schemas import LearningPathResponse
+
 
 class ChatRequest(BaseModel):
     """Request schema for chat interactions."""
@@ -20,4 +22,5 @@ class ChatResponse(BaseModel):
     status: Literal["in_progress", "awaiting_generation", "completed"]
     messages: List[ChatMessage]
     topic: Optional[str] = None
-    learning_path: Optional[Any] = None  # Raw JSON learning path when completed
+    learning_path_json: Optional[Any] = None  # Raw JSON learning path when completed
+    learning_path: Optional[Any] = None  # DB model instance when completed

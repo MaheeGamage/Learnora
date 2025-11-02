@@ -21,11 +21,11 @@ class GraphResponse(BaseModel):
 # Database schemas
 class LearningPathBase(BaseModel):
     topic: str
-
+    graph_uri: Optional[str]
+    user_id: int
 
 class LearningPathCreate(LearningPathBase):
-    conversation_thread_id: str
-
+    pass
 
 class LearningPathUpdate(BaseModel):
     topic: Optional[str] = None
@@ -33,7 +33,7 @@ class LearningPathUpdate(BaseModel):
 
 class LearningPathResponse(LearningPathBase):
     id: int
-    conversation_thread_id: str
+    conversation_thread_id: List[str]
     created_at: datetime
     updated_at: Optional[datetime]
     

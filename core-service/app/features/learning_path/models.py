@@ -1,13 +1,15 @@
-from sqlalchemy import ARRAY, Column, String
+from sqlalchemy import ARRAY, Column, Integer, String, ForeignKey
 from app.database.base import BaseModel
+from sqlalchemy.orm import relationship
 
 class LearningPath(BaseModel):
     """SQLAlchemy model for learning paths"""
     __tablename__ = "learning_path"
 
     topic = Column(String(255), nullable=False)
-    conversation_thread_id = Column(ARRAY(String(255)), index=True, nullable=False)
-    graph_uri = Column(String(255), nullable=False, unique=True)
+    graph_uri = Column(String(255), nullable=True, unique=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    # user = relationship("User")
 
     def __repr__(self):
-        return f"<LearningPath(id={self.id}, topic={self.topic}, conversation_thread_id={self.conversation_thread_id}, graph_uri={self.graph_uri})>"
+        return f"<LearningPath(id={self.id}, topic={self.topic}, conversation_thread_id={self.conversation_thread_id}, graph_uri={self.graph_uri}, user_id={self.user_id})>"

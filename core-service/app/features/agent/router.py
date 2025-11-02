@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from app.features.agent.schemas import ChatRequest, ChatResponse
 from app.features.agent.service import AgentService
 from typing import Optional
 import logging
-
+from app.features.users.users import current_active_user
+from app.database import get_db
+from app.features.users.models import User
+from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -11,7 +14,7 @@ service = AgentService()
 
 
 @router.post("/chat", response_model=ChatResponse, status_code=status.HTTP_201_CREATED)
-async def start_chat(request: ChatRequest):
+async def start_chat(request: ChatRequest,  db: AsyncSession = Depends(get_db), user: User = Depends(current_active_user)):
     """
     Start a new chat conversation with the learning path agent.
     
@@ -26,9 +29,11 @@ async def start_chat(request: ChatRequest):
     
     try:
         response = service.invoke_graph(
+            db=db,
             message=request.message,
             thread_id=None,
-            topic=request.topic
+            topic=request.topic,
+            user=user
         )
         return response
     except ValueError as e:
@@ -45,7 +50,7 @@ async def start_chat(request: ChatRequest):
 
 
 @router.post("/chat/{thread_id}", response_model=ChatResponse)
-async def continue_chat(thread_id: str, request: ChatRequest):
+async def continue_chat(thread_id: str, request: ChatRequest, db: AsyncSession = Depends(get_db), user: User = Depends(current_active_user)):
     """
     Continue an existing chat conversation.
     
@@ -54,6 +59,8 @@ async def continue_chat(thread_id: str, request: ChatRequest):
     """
     try:
         response = service.invoke_graph(
+            db=db,
+            user=user,
             message=request.message,
             thread_id=thread_id,
             topic=request.topic  # Optional, usually None for continuation
@@ -73,7 +80,7 @@ async def continue_chat(thread_id: str, request: ChatRequest):
 
 
 @router.get("/chat/{thread_id}", response_model=ChatResponse)
-async def get_chat(thread_id: str):
+async def get_chat(thread_id: str, db: AsyncSession = Depends(get_db),user: User = Depends(current_active_user)):
     """
     Retrieve the current state and history of a chat conversation.
     

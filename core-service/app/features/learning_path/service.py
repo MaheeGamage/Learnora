@@ -27,6 +27,7 @@ from app.util.string_util import normalize_string
 from app.kg.base import KGBase
 from app.features.users.models import User
 from app.features.users.users import current_active_user
+# from app.features.agent.graph import graph
 
 logger = logging.getLogger(__name__)
 
@@ -167,85 +168,85 @@ class LearningPathService:
     
     # ===== LangGraph Operations =====
     
-    async def start_learning_path(self, topic: str) -> GraphResponse:
-        """Start a new learning path"""
-        # Generate unique thread ID for the conversation
-        conversation_thread_id = str(uuid4())
-        config = {"configurable": {"thread_id": conversation_thread_id}}
-        initial_state = {"topic": topic}
+    # async def start_learning_path(self, topic: str) -> GraphResponse:
+    #     """Start a new learning path"""
+    #     # Generate unique thread ID for the conversation
+    #     conversation_thread_id = str(uuid4())
+    #     config = {"configurable": {"thread_id": conversation_thread_id}}
+    #     initial_state = {"topic": topic}
         
-        # Run graph (sync code - run in thread pool to avoid blocking)
-        result = await asyncio.to_thread(self.graph.invoke, initial_state, config)
-        message_threads = result.get("messages", {})
+    #     # Run graph (sync code - run in thread pool to avoid blocking)
+    #     result = await asyncio.to_thread(self.graph.invoke, initial_state, config)
+    #     message_threads = result.get("messages", {})
         
-        logger.info(f"Started learning path with conversation_thread_id: {conversation_thread_id}")
+    #     logger.info(f"Started learning path with conversation_thread_id: {conversation_thread_id}")
         
-        return GraphResponse(
-            thread_id=conversation_thread_id,
-            messages=message_threads
-        )
+    #     return GraphResponse(
+    #         thread_id=conversation_thread_id,
+    #         messages=message_threads
+    #     )
 
-    async def resume_learning_path(self, db: AsyncSession, thread_id: str, human_answer: str, db_user: User) -> GraphResponse:
-        """Resume an existing learning path
+    # async def resume_learning_path(self, db: AsyncSession, thread_id: str, human_answer: str, db_user: User) -> GraphResponse:
+    #     """Resume an existing learning path
         
-        Args:
-            db: Database session
-            thread_id: The conversation thread identifier
-            human_answer: Human's answer to the previous question
-            user: The current active user
+    #     Args:
+    #         db: Database session
+    #         thread_id: The conversation thread identifier
+    #         human_answer: Human's answer to the previous question
+    #         user: The current active user
         
-        Returns:
-            GraphResponse with updated conversation
-        """
+    #     Returns:
+    #         GraphResponse with updated conversation
+    #     """
 
-        logger.info(f"Resuming learning path for user: {db_user.id}")
+    #     logger.info(f"Resuming learning path for user: {db_user.id}")
 
-        config = {"configurable": {"thread_id": thread_id}}
-        state = {"messages": [HumanMessage(content=human_answer)]}
+    #     config = {"configurable": {"thread_id": thread_id}}
+    #     state = {"messages": [HumanMessage(content=human_answer)]}
         
-        # Update graph state (sync code - run in thread pool)
-        await asyncio.to_thread(self.graph.update_state, config, state)
+    #     # Update graph state (sync code - run in thread pool)
+    #     await asyncio.to_thread(self.graph.update_state, config, state)
         
-        # Run graph (sync code - run in thread pool)
-        result = await asyncio.to_thread(self.graph.invoke, None, config)
-        message_threads = result.get("messages", {})
+    #     # Run graph (sync code - run in thread pool)
+    #     result = await asyncio.to_thread(self.graph.invoke, None, config)
+    #     message_threads = result.get("messages", {})
         
-        # Check if this was the final step (learning path generation)
-        # The last message should contain the JSON array of concepts
-        if message_threads and len(message_threads) > 0:
-            last_message = message_threads[-1]
-            if isinstance(last_message, AIMessage):
-                # Extract the JSON output and save to variable
-                learning_path_json = extract_json_array_from_message(last_message.content)
+    #     # Check if this was the final step (learning path generation)
+    #     # The last message should contain the JSON array of concepts
+    #     if message_threads and len(message_threads) > 0:
+    #         last_message = message_threads[-1]
+    #         if isinstance(last_message, AIMessage):
+    #             # Extract the JSON output and save to variable
+    #             learning_path_json = extract_json_array_from_message(last_message.content)
 
-                if learning_path_json:
-                    # Store the extracted concepts in KG using the conversation thread ID
-                    topic = "sample topic"  # TODO: Retrieve actual topic from conversation state
+    #             if learning_path_json:
+    #                 # Store the extracted concepts in KG using the conversation thread ID
+    #                 topic = "sample topic"  # TODO: Retrieve actual topic from conversation state
 
-                    graph, learning_path_uri = self.convert_learning_path_json_to_rdf_graph(learning_path_json, topic)
+    #                 graph, learning_path_uri = self.convert_learning_path_json_to_rdf_graph(learning_path_json, topic)
                     
-                    # Create user triplets if not already existing
-                    user_uri = self.kg_base.ONT[normalize_string(f"user_{db_user.id}")]
-                    # Check if user exists by querying for any triple with user_uri as subject and type User
-                    if (user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User) not in graph:
-                        graph.add((user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User))
-                        graph.add((user_uri, self.kg_base.ONT.followsPath, learning_path_uri))
+    #                 # Create user triplets if not already existing
+    #                 user_uri = self.kg_base.ONT[normalize_string(f"user_{db_user.id}")]
+    #                 # Check if user exists by querying for any triple with user_uri as subject and type User
+    #                 if (user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User) not in graph:
+    #                     graph.add((user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User))
+    #                     graph.add((user_uri, self.kg_base.ONT.followsPath, learning_path_uri))
 
-                    self.storage.save_user_graph(str(db_user.id), graph)
+    #                 self.storage.save_user_graph(str(db_user.id), graph)
 
-                    logger.info(f"Extracted and stored {len(learning_path_json)} concepts for thread {thread_id}, user {db_user.id}")
-                else:
-                    raise HTTPException(
-                            status_code=500, 
-                            detail="Learning path generation failed. Could not extract valid JSON from AI response."
-                        )
+    #                 logger.info(f"Extracted and stored {len(learning_path_json)} concepts for thread {thread_id}, user {db_user.id}")
+    #             else:
+    #                 raise HTTPException(
+    #                         status_code=500, 
+    #                         detail="Learning path generation failed. Could not extract valid JSON from AI response."
+    #                     )
         
-        logger.info(f"Resumed learning path with conversation_thread_id: {thread_id}")
+    #     logger.info(f"Resumed learning path with conversation_thread_id: {thread_id}")
         
-        return GraphResponse(
-            thread_id=thread_id,
-            messages=message_threads
-        )
+    #     return GraphResponse(
+    #         thread_id=thread_id,
+    #         messages=message_threads
+    #     )
         
     def convert_learning_path_json_to_rdf_graph(self, json_data: List[Dict[str, Any]], topic: str) -> Tuple[RDFGraph, URIRef]:
         """
@@ -295,3 +296,27 @@ class LearningPathService:
         
         return graph, learning_path_uri
 
+    def parse_and_save_learning_path(self, db: AsyncSession, json_data: List[Dict[str, Any]], topic: str, user: User):
+        parsed_graph, learning_path_uri = self.convert_learning_path_json_to_rdf_graph(json_data, topic)
+        
+        # Create user triplets if not already existing
+        user_uri = self.kg_base.ONT[normalize_string(f"user_{user.id}")]
+        # Check if user exists by querying for any triple with user_uri as subject and type User
+        if (user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User) not in parsed_graph:
+            parsed_graph.add((user_uri, self.kg_base.RDF.type, self.kg_base.ONT.User))
+            parsed_graph.add((user_uri, self.kg_base.ONT.followsPath, learning_path_uri))
+
+        self.storage.save_user_graph(str(user.id), parsed_graph)
+        
+        # Create DB record
+        db_learning_path = crud.create_learning_path(
+            db,
+            LearningPathCreate(
+                user_id=user.id,
+                topic=topic,
+                # graph_uri=str(learning_path_uri)
+            )
+        )
+        
+        return db_learning_path
+        

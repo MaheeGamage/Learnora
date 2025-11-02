@@ -7,6 +7,11 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, Base
 from app.features.agent.graph import graph, LearningPathState
 from app.features.agent.schemas import ChatResponse, ChatMessage
 import logging
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.features.learning_path.service import LearningPathService
+from app.features.learning_path.schemas import LearningPathResponse
+from app.features.users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +24,9 @@ class GraphStage(Enum):
 
 class AgentService:
     """Service layer for agent graph interactions."""
+    
+    def __init__(self):
+        self.learning_path_service = LearningPathService()
 
     def _determine_graph_stage(
         self, thread_id: Optional[str], topic: Optional[str]
@@ -47,6 +55,8 @@ class AgentService:
 
     def invoke_graph(
         self,
+        db: AsyncSession,
+        user: User,
         message: str,
         thread_id: Optional[str] = None,
         topic: Optional[str] = None,
@@ -110,20 +120,31 @@ class AgentService:
             # Extract topic from state
             current_topic = result.get("topic") if result else None
             
-            # Parse learning path if completed
-            learning_path = None
-            if status == "completed":
-                learning_path = self._parse_learning_path(result.get("messages", []))
-            
             # Format messages
             formatted_messages = self._format_messages(result.get("messages", []))
+            
+            # Parse and save learning path if completed
+            learning_path_response = None
+            if status == "completed":
+                learning_path_json = self._parse_learning_path(result.get("messages", []))
+                
+                if learning_path_json:
+                    # Saving learning path to DB and storage if completed
+                    db_learning_path = self.learning_path_service.parse_and_save_learning_path(
+                        db=db,
+                        json_data=learning_path_json,
+                        topic=current_topic,
+                        user=user
+                    )
+                    # Convert SQLAlchemy model to Pydantic schema
+                    # learning_path_response = LearningPathResponse.model_validate(db_learning_path)
             
             return ChatResponse(
                 thread_id=resolved_thread_id,
                 status=status,
                 messages=formatted_messages,
                 topic=current_topic,
-                learning_path=learning_path
+                # learning_path=learning_path_response
             )
 
         except Exception as e:
