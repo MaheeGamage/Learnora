@@ -11,6 +11,7 @@ from app.config import settings
 from app.features.learning_path.router import router as learning_path_router
 from app.features.concept.router import router as concept_router
 from app.features.users.router import router as users_router
+from app.features.agent.router import router as agent_router
 from app.database import init_db
 
 # Configure logging
@@ -63,6 +64,12 @@ app.include_router(
     concept_router,
     prefix=f"{settings.API_V1_PREFIX}/concepts",
     tags=["concepts"]
+)
+
+app.include_router(
+    agent_router,
+    prefix=f"{settings.API_V1_PREFIX}/agent",
+    tags=["agent"]
 )
 
 # Register user/auth router

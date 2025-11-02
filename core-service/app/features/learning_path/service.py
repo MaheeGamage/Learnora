@@ -46,7 +46,7 @@ class LearningPathService:
     def graph(self):
         """Lazy load the LangGraph to avoid initialization during testing."""
         if self._graph is None:
-            from app.features.learning_path.graph import graph
+            from features.agent.graph import graph
             self._graph = graph
         return self._graph
     
