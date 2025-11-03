@@ -90,26 +90,30 @@ class AgentService:
         state = {}
 
         try:
-            # Build state based on graph stage
-            if stage == GraphStage.NEW_CONVERSATION:
-                # For new conversations, set topic
-                state = {"topic": topic}
-            
-            # Add message to state if provided
-            if message:
-                if "messages" in state:
-                    state["messages"].append(HumanMessage(content=message))
-                else:
-                    state["messages"] = [HumanMessage(content=message)]
+            try:
+                # Build state based on graph stage
+                if stage == GraphStage.NEW_CONVERSATION:
+                    # For new conversations, set topic
+                    state = {"topic": topic}
+                
+                # Add message to state if provided
+                if message:
+                    if "messages" in state:
+                        state["messages"].append(HumanMessage(content=message))
+                    else:
+                        state["messages"] = [HumanMessage(content=message)]
 
-            # Invoke graph based on stage
-            if stage == GraphStage.RESUME_CONVERSATION:
-                # For existing conversations, update state then invoke
-                graph.update_state(config, state)
-                result = graph.invoke(None, config)
-            else:
-                # For new conversations, invoke with full state
-                result = graph.invoke(state, config)
+                # Invoke graph based on stage
+                if stage == GraphStage.RESUME_CONVERSATION:
+                    # For existing conversations, update state then invoke
+                    graph.update_state(config, state)
+                    result = graph.invoke(None, config)
+                else:
+                    # For new conversations, invoke with full state
+                    result = graph.invoke(state, config)
+            except Exception as e:
+                logger.error(f"Graph invocation error for thread {resolved_thread_id}: {str(e)}")
+                raise
             
             # Get the final state
             state = graph.get_state(config)
@@ -126,18 +130,23 @@ class AgentService:
             # Parse and save learning path if completed
             learning_path_response = None
             if status == "completed":
-                learning_path_json = self._parse_learning_path(result.get("messages", []))
-                
-                if learning_path_json:
-                    # Saving learning path to DB and storage if completed
-                    db_learning_path = await self.learning_path_service.parse_and_save_learning_path(
-                        db=db,
-                        json_data=learning_path_json,
-                        topic=current_topic,
-                        user=user
-                    )
-                    # Convert SQLAlchemy model to Pydantic schema
-                    # learning_path_response = LearningPathResponse.model_validate(db_learning_path)
+                try:
+                    learning_path_json = self._parse_learning_path(result.get("messages", []))
+                    logger.info(f"Parsed learning path JSON for thread {resolved_thread_id}")
+                    
+                    if learning_path_json:
+                        # Saving learning path to DB and storage if completed
+                        db_learning_path = await self.learning_path_service.parse_and_save_learning_path(
+                            db=db,
+                            json_data=learning_path_json,
+                            topic=current_topic,
+                            user=user
+                        )
+                        # Convert SQLAlchemy model to Pydantic schema
+                        # learning_path_response = LearningPathResponse.model_validate(db_learning_path)
+                except Exception as e:
+                    logger.error(f"Error saving learning path for thread {resolved_thread_id}: {str(e)}")
+                    raise
             
             return ChatResponse(
                 thread_id=resolved_thread_id,
