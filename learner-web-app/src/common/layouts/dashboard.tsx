@@ -6,6 +6,8 @@ import { useSession } from '../../hooks/useSession';
 import { Stack, Tooltip, IconButton, TextField } from '@mui/material';
 import { Account } from '@toolpad/core';
 import SearchIcon from '@mui/icons-material/Search';
+import { ChatPanelWrapper } from '../components/ChatPanel';
+import { DemoChatWindow } from '../../features/agent/DemoChatWindow';
 
 function ToolbarActionsSearch() {
   return (
@@ -45,7 +47,7 @@ function ToolbarActionsSearch() {
   );
 }
 
-export default function Layout() {
+export default function MainDashboardLayout() {
   const { session, loading } = useSession();
   const location = useLocation();
 
@@ -69,9 +71,15 @@ export default function Layout() {
         toolbarActions: ToolbarActionsSearch
       }}
     >
-      <PageContainer>
-        <Outlet />
-      </PageContainer>
+      <ChatPanelWrapper 
+        defaultOpen={true} 
+        width={350}
+        chatComponent={<DemoChatWindow agentTitle="Learning AI Agent" enableDemo={true} />}
+      >
+        <PageContainer>
+          <Outlet />
+        </PageContainer>
+      </ChatPanelWrapper>
     </DashboardLayout>
   );
 }
