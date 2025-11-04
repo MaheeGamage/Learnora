@@ -1,6 +1,6 @@
 import re
-from features.learning_path.constant import LEARNING_PATH_GRAPH_LOCAL_IDENTIFIER_PREFIX
-from features.users.constant import USER_GRAPH_LOCAL_IDENTIFIER_PREFIX
+from app.features.learning_path.constant import LEARNING_PATH_GRAPH_LOCAL_IDENTIFIER_PREFIX
+from app.features.users.constant import USER_GRAPH_LOCAL_IDENTIFIER_PREFIX
 
 def get_user_kg_local_name(user_db_id: str) -> str:
     """
