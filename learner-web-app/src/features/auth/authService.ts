@@ -1,4 +1,5 @@
-import type { Session } from '../contexts/SessionContext';
+import type { Session } from '../../contexts/SessionContext';
+import { ACCESS_TOKEN_KEY } from './constant';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -71,7 +72,7 @@ export async function signInWithCredentials(
     const userData: UserResponse = await userResponse.json();
 
     // Store token in localStorage for persistence
-    localStorage.setItem('access_token', loginData.access_token);
+    localStorage.setItem(ACCESS_TOKEN_KEY, loginData.access_token);
 
     const session: Session = {
       user: {
@@ -147,7 +148,7 @@ export async function registerUser(
  */
 export async function signOut(): Promise<{ success: boolean; error?: string }> {
   try {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
     
     if (token) {
       // Call logout endpoint
@@ -160,12 +161,12 @@ export async function signOut(): Promise<{ success: boolean; error?: string }> {
     }
 
     // Clear token from localStorage
-    localStorage.removeItem('access_token');
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
 
     return { success: true };
   } catch (error) {
     // Even if the API call fails, clear local storage
-    localStorage.removeItem('access_token');
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred during sign out',
@@ -178,7 +179,7 @@ export async function signOut(): Promise<{ success: boolean; error?: string }> {
  */
 export async function getCurrentSession(): Promise<Session | null> {
   try {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
     
     if (!token) {
       return null;
@@ -193,7 +194,7 @@ export async function getCurrentSession(): Promise<Session | null> {
 
     if (!userResponse.ok) {
       // Token is invalid, clear it
-      localStorage.removeItem('access_token');
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
       return null;
     }
 
@@ -218,7 +219,7 @@ export async function getCurrentSession(): Promise<Session | null> {
     return session;
   } catch {
     // If there's an error, clear the token
-    localStorage.removeItem('access_token');
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
     return null;
   }
 }

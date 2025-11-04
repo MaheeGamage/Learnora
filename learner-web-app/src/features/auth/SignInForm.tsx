@@ -1,7 +1,7 @@
 import { SignInPage, type AuthProvider, type AuthResponse } from '@toolpad/core/SignInPage';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useSession } from '../../hooks/useSession';
-import { signInWithCredentials } from '../../services/auth';
+import { signInWithCredentials } from './authService';
 
 export default function SignInForm() {
   const { setSession } = useSession();

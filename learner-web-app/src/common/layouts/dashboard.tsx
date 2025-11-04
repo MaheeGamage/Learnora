@@ -7,7 +7,7 @@ import { Stack, Tooltip, IconButton, TextField } from '@mui/material';
 import { Account } from '@toolpad/core';
 import SearchIcon from '@mui/icons-material/Search';
 import { ChatPanelWrapper } from '../components/ChatPanel';
-import { DemoChatWindow } from '../../features/agent/DemoChatWindow';
+import { ConnectedChatWindow } from '../../features/agent/ConnectedChatWindow';
 
 function ToolbarActionsSearch() {
   return (
@@ -71,10 +71,13 @@ export default function MainDashboardLayout() {
         toolbarActions: ToolbarActionsSearch
       }}
     >
-      <ChatPanelWrapper 
-        defaultOpen={true} 
+      <ChatPanelWrapper
+        defaultOpen={true}
         width={350}
-        chatComponent={<DemoChatWindow agentTitle="Learning AI Agent" enableDemo={true} />}
+        chatComponent={<ConnectedChatWindow
+          agentTitle="AI Learning Assistant"
+          initialTopic="Python Programming" // TODO: Get this from user input
+        />}
       >
         <PageContainer>
           <Outlet />

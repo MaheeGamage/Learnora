@@ -1,10 +1,21 @@
 import * as React from 'react';
 import { ReactRouterAppProvider } from "@toolpad/core/react-router";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Authentication, Navigation } from '@toolpad/core';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import SessionContext, { type Session } from '../../contexts/SessionContext';
-import { signOut, getCurrentSession } from '../../services/auth';
+import { signOut, getCurrentSession } from '../../features/auth/authService';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+      retry: 1,
+    },
+  },
+});
 
 const NAVIGATION: Navigation = [
   {
@@ -61,15 +72,17 @@ export default function AppProviderWrapper({ children }: Readonly<{ children: Re
   }, []);
 
   return (
-    <ReactRouterAppProvider 
-      navigation={NAVIGATION} 
-      branding={BRANDING}
-      session={session}
-      authentication={AUTHENTICATION}
-    >
-      <SessionContext.Provider value={sessionContextValue}>
-        {children}
-      </SessionContext.Provider>
-    </ReactRouterAppProvider>
+    <QueryClientProvider client={queryClient}>
+      <ReactRouterAppProvider 
+        navigation={NAVIGATION} 
+        branding={BRANDING}
+        session={session}
+        authentication={AUTHENTICATION}
+      >
+        <SessionContext.Provider value={sessionContextValue}>
+          {children}
+        </SessionContext.Provider>
+      </ReactRouterAppProvider>
+    </QueryClientProvider>
   );
 }
