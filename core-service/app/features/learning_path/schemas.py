@@ -36,6 +36,8 @@ class LearningPathResponse(LearningPathBase):
     graph_uri: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    # kg_data now returns parsed JSON-LD (as Python objects) instead of a raw JSON string
+    kg_data: Optional[Any] = None
     
     class Config:
         from_attributes = True
@@ -55,3 +57,4 @@ class LearningPathKGResponse(BaseModel):
     topic: str
     concepts: List[ConceptInfo]
     concept_count: int
+    graph: str 

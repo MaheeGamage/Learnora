@@ -3,30 +3,24 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 from langchain_core.messages import HumanMessage, AIMessage
-from rdflib import RDF, Graph as RDFGraph, URIRef
+from rdflib import RDF, Graph as RDFGraph, Namespace, URIRef
 from typing import List, Dict, Any, Tuple, Optional
 from app.features.learning_path import crud
 from app.features.learning_path.schemas import (
     LearningPathCreate,
     LearningPathUpdate,
-    GraphResponse
 )
 from app.features.learning_path.models import LearningPath
 from app.features.concept.service import ConceptService
-from app.features.learning_path.utils import (
-    extract_json_array_from_message,
-    extract_json_from_message,
-    parse_and_store_concepts
-)
 import logging
-import asyncio
 from rdflib import Literal
-from app.features import learning_path
+import json
 from app.kg.storage import KGStorage
 from app.util.string_util import normalize_string
 from app.kg.base import KGBase
 from app.features.users.models import User
-from app.util.kg_util import get_learning_path_kg_local_name
+from app.util.kg_util import extract_subgraph, get_learning_path_kg_local_name
+import kg
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +63,8 @@ class LearningPathService:
         self,
         db: AsyncSession,
         learning_path_id: int,
-        current_user: User
+        current_user: User,
+        include_kg: bool = False
     ) -> Optional[LearningPath]:
         """Get a learning path by ID with authorization check."""
         learning_path = await crud.get_learning_path_by_id(db, learning_path_id)
@@ -77,6 +72,20 @@ class LearningPathService:
         if learning_path and learning_path.user_id != current_user.id:
             raise HTTPException(
                 status_code=403, detail="Not authorized to access this learning path")
+
+        if learning_path and include_kg and learning_path.graph_uri:
+            try:
+                user_graph = self.storage.load_user_graph(str(current_user.id))
+                # Serialize graph to JSON-LD format
+                lp_uri = URIRef(learning_path.graph_uri)
+                kg_jsonld = self.extract_learning_path_graph(user_graph, lp_uri) #learning_path.graph_uri
+                # kg_jsonld = self._graph_to_jsonld(user_graph)
+                # Attach KG data to the response object
+                learning_path.kg_data = kg_jsonld
+            except Exception as e:
+                logger.error(f"Error retrieving KG data: {str(e)}")
+                # Don't fail the request if KG data retrieval fails
+                learning_path.kg_data = None
 
         return learning_path
 
@@ -127,6 +136,22 @@ class LearningPathService:
         return await crud.delete_learning_path(db, learning_path_id)
 
     # ===== Knowledge Graph Operations =====
+
+    def extract_learning_path_graph(self, user_graph: RDFGraph, learning_path_uri: URIRef) -> Any:
+        """Extract a subgraph for the learning path and return parsed JSON-LD as Python objects.
+
+        Returns a Python structure (usually a list/dict) suitable for returning from FastAPI without
+        requiring the client to re-parse a serialized JSON string.
+        """
+        try:
+            subgraph = extract_subgraph(user_graph, learning_path_uri, max_depth=2)
+            jsonld_str = subgraph.serialize(format="json-ld", indent=4)
+            # Parse the JSON-LD string into Python objects so the API returns JSON types
+            parsed = json.loads(jsonld_str)
+            return parsed
+        except Exception as e:
+            logger.error("JSON-LD serialization or parsing failed: %s", str(e))
+            raise
 
     # ===== Helper Methods =====
 
@@ -198,7 +223,7 @@ class LearningPathService:
 
         parsed_graph, learning_path_uri = self.convert_learning_path_json_to_rdf_graph(
             json_data, topic, db_learning_path=db_learning_path)
-        
+
         # update learning path with graph URI
         updated_db_learning_path = await crud.update_learning_path(
             db,

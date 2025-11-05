@@ -32,11 +32,16 @@ async def create_learning_path(
 @router.get("/{learning_path_id}", response_model=LearningPathResponse)
 async def get_learning_path(
     learning_path_id: int,
+    include_kg: bool = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(current_active_user)
 ):
-    """Get a learning path by ID."""
-    learning_path = await service.get_learning_path(db, learning_path_id, current_user)
+    """Get a learning path by ID with optional knowledge graph data.
+    
+    Query Parameters:
+        include_kg: If true, includes the knowledge graph data as jsonld in the response
+    """
+    learning_path = await service.get_learning_path(db, learning_path_id, current_user, include_kg)
     if not learning_path:
         raise HTTPException(status_code=404, detail=LEARNING_PATH_NOT_FOUND)
     return learning_path
