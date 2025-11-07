@@ -20,7 +20,6 @@ from app.util.string_util import normalize_string
 from app.kg.base import KGBase
 from app.features.users.models import User
 from app.util.kg_util import extract_subgraph, get_learning_path_kg_local_name
-import kg
 
 logger = logging.getLogger(__name__)
 
