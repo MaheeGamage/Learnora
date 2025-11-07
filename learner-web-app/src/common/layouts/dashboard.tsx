@@ -79,7 +79,7 @@ export default function MainDashboardLayout() {
           initialTopic="Python Programming" // TODO: Get this from user input
         />}
       >
-        <PageContainer>
+        <PageContainer title=''>
           <Outlet />
         </PageContainer>
       </ChatPanelWrapper>

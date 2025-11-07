@@ -1,11 +1,10 @@
 import * as React from 'react';
 import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { Authentication, Navigation } from '@toolpad/core';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import type { Authentication } from '@toolpad/core';
 import SessionContext, { type Session } from '../../contexts/SessionContext';
 import { signOut, getCurrentSession } from '../../features/auth/authService';
+import { NAVIGATION } from '../constant/navigation';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -16,22 +15,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-const NAVIGATION: Navigation = [
-  {
-    kind: 'header',
-    title: 'Main items',
-  },
-  {
-    title: 'Dashboard',
-    icon: <DashboardIcon />,
-  },
-  {
-    segment: 'orders',
-    title: 'Orders',
-    icon: <ShoppingCartIcon />,
-  },
-];
 
 const BRANDING = {
   title: 'Learnora',
