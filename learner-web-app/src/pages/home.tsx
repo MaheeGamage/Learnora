@@ -1,6 +1,8 @@
-import * as React from 'react';
-import Typography from '@mui/material/Typography';
+import LearningPathIntegration from '../features/learning-path/component/LearningPathIntegration';
+
 
 export default function DashboardPage() {
-  return <Typography>Welcome to Toolpad!</Typography>;
+  return (
+    <LearningPathIntegration />
+  )
 }

@@ -2,7 +2,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import { Outlet, Navigate, useLocation } from 'react-router';
 import { DashboardLayout, ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 import { PageContainer } from '@toolpad/core/PageContainer';
-import { useSession } from '../../hooks/useSession';
+import { useSession } from '../../common/hooks/useSession';
 import { Stack, Tooltip, IconButton, TextField } from '@mui/material';
 import { Account } from '@toolpad/core';
 import SearchIcon from '@mui/icons-material/Search';

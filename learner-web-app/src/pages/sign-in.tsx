@@ -1,6 +1,6 @@
 import LinearProgress from '@mui/material/LinearProgress';
 import { Navigate, useSearchParams } from 'react-router';
-import { useSession } from '../hooks/useSession';
+import { useSession } from '../common/hooks/useSession';
 import SignInForm from '../features/auth/SignInForm';
 
 export default function SignIn() {
