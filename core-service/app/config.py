@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Optional
 
 
 class Settings(BaseSettings):
@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./learnora.db"
     DB_ECHO: bool = False
+    # Connection pool tuning (None = auto / development: disable pooling to avoid
+    # hitting service limits when using managed Postgres in session mode)
+    DB_POOL_SIZE: Optional[int] = None
+    DB_MAX_OVERFLOW: Optional[int] = None
     
     # LangSmith
     LANGSMITH_TRACING: bool = False

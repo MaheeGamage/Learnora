@@ -27,13 +27,27 @@ def get_async_database_url(url: str) -> str:
 ASYNC_DATABASE_URL = get_async_database_url(settings.DATABASE_URL)
 
 # Create ASYNC engine
-engine = create_async_engine(
-    ASYNC_DATABASE_URL,
-    echo=settings.DEBUG,
-    future=True,
-    # SQLite specific: disable pooling for file-based DBs
-    poolclass=NullPool if ASYNC_DATABASE_URL.startswith("sqlite") else None,
-)
+# Build engine kwargs dynamically so we can control pooling behavior via settings.
+engine_kwargs: dict = {
+    "echo": settings.DEBUG,
+    "future": True,
+}
+
+# For SQLite (file-based) disable pooling
+if ASYNC_DATABASE_URL.startswith("sqlite"):
+    engine_kwargs["poolclass"] = NullPool
+else:
+    # If DB_POOL_SIZE is not set, default to disabling pooling in non-production to
+    # avoid hitting managed DB client limits (e.g., session mode limits).
+    if settings.DB_POOL_SIZE is None:
+        engine_kwargs["poolclass"] = NullPool
+    else:
+        # Pass explicit pool sizing if provided
+        engine_kwargs["pool_size"] = settings.DB_POOL_SIZE
+        if settings.DB_MAX_OVERFLOW is not None:
+            engine_kwargs["max_overflow"] = settings.DB_MAX_OVERFLOW
+
+engine = create_async_engine(ASYNC_DATABASE_URL, **engine_kwargs)
 
 # Create ASYNC session factory
 SessionLocal = async_sessionmaker(
