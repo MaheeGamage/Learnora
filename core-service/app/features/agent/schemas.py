@@ -3,11 +3,18 @@ from typing import Optional, Any, List, Literal
 
 from app.features.learning_path.schemas import LearningPathResponse
 
+class BaseChatRequest(BaseModel):
+    """Base schema for chat requests."""
+    message: str
 
-class ChatRequest(BaseModel):
+class ChatRequest(BaseChatRequest):
     """Request schema for chat interactions."""
     message: str
     topic: Optional[str] = None  # Required only for new conversations
+    
+class InitChatRequest(BaseChatRequest):
+    # make all inputs optional by overriding type + default
+    message: Optional[str] = None
 
 
 class ChatMessage(BaseModel):
@@ -19,7 +26,7 @@ class ChatMessage(BaseModel):
 class ChatResponse(BaseModel):
     """Response schema for chat interactions."""
     thread_id: str
-    status: Literal["in_progress", "awaiting_generation", "completed"]
+    # status: Literal["in_progress", "awaiting_generation", "completed"]
     messages: List[ChatMessage]
     topic: Optional[str] = None
     learning_path_json: Optional[Any] = None  # Raw JSON learning path when completed

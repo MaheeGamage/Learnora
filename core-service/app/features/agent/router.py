@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.features.agent.schemas import ChatRequest, ChatResponse
+from app.features.agent.schemas import ChatRequest, ChatResponse, InitChatRequest
 from app.features.agent.service import AgentService
 from typing import Optional
 import logging
@@ -14,25 +14,19 @@ service = AgentService()
 
 
 @router.post("/chat", response_model=ChatResponse, status_code=status.HTTP_201_CREATED)
-async def start_chat(request: ChatRequest,  db: AsyncSession = Depends(get_db), user: User = Depends(current_active_user)):
+async def start_chat(request: InitChatRequest,  db: AsyncSession = Depends(get_db), user: User = Depends(current_active_user)):
     """
     Start a new chat conversation with the learning path agent.
     
     Requires topic to be provided in the request.
     Returns a new thread_id and initial AI response.
     """
-    if not request.topic:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Topic is required for starting a new conversation"
-        )
     
     try:
         response = await service.invoke_graph(
             db=db,
             message=request.message,
             thread_id=None,
-            topic=request.topic,
             user=user
         )
         return response
@@ -62,8 +56,7 @@ async def continue_chat(thread_id: str, request: ChatRequest, db: AsyncSession =
             db=db,
             user=user,
             message=request.message,
-            thread_id=thread_id,
-            topic=request.topic  # Optional, usually None for continuation
+            thread_id=thread_id
         )
         return response
     except ValueError as e:
