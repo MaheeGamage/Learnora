@@ -5,15 +5,17 @@ from typing import Sequence
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
+from app.features.agent.type import AgentState, AgentMode
+
 # State definition for Intention Clarification phase
-class IntentionState(MessagesState):
+class IntentionState(AgentState):
     """
     State tracking the intention clarification conversation.
     
     Focus: Understanding what the user wants to ACHIEVE (not their knowledge level)
     """
     # Conversation history (inherited from MessagesState)
-    messages: Annotated[Sequence[BaseMessage], add_messages]
+    # messages: Annotated[Sequence[BaseMessage], add_messages] - This gets inherited from AgentState
     
     # Extracted information
     desired_outcome: str | None = None  # What the user wants to achieve/do/create

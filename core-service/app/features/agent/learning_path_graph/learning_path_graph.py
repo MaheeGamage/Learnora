@@ -14,9 +14,42 @@ import json
 
 from app.features.agent.learning_path_graph.prompt import evaluator_prompt, followup_prompt, formatter_prompt, goal_definition_prompt, concept_graph_prompt
 from app.features.agent.learning_path_graph.type import ConceptGraphState, GoalDefinitionState, IntentionAnalysis, IntentionOutput, IntentionState, LearningGoalDefinition, LearningGoalDefinition
+from app.features.agent.type import AgentMode, AgentState
 
 # Initialize the model
 model = init_chat_model("gemini-2.5-flash-lite", model_provider="google_genai")
+
+basic_prompt_template = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are the assistant of an AI-powered casual learning platform called Learnora."
+            "Answer all questions to the best of your ability"
+        ),
+        MessagesPlaceholder(variable_name="messages"),
+    ]
+)
+
+def basic_call_model(state: IntentionState):
+    prompt = basic_prompt_template.invoke(state)
+    response = model.invoke(prompt)
+    return {"messages": [response]}
+
+def route_mode(state: IntentionState):
+    if state['mode'] == AgentMode.LPP:
+        return AgentMode.LPP
+    else:
+        return AgentMode.BASIC
+
+def reset_mode(state: IntentionState) -> dict:
+    """
+    Reset mode to BASIC after subgraph completes.
+    
+    This allows the graph to return to general chat mode
+    for the next user message.
+    """
+    print("🔄 Resetting mode to BASIC after learning path completion")
+    return {"mode": None}
 
 ###############################
 # Node 1: Initial Asker
@@ -384,6 +417,9 @@ def generate_concept_graph(state: ConceptGraphState) -> dict:
 # Build the complete learning path generation graph
 learning_path_builder = StateGraph(ConceptGraphState)
 
+learning_path_builder.add_node("basic_chat", basic_call_model)
+learning_path_builder.add_node("reset_mode", reset_mode)
+
 # Add all nodes from Steps 1-3
 # Step 1: Intention Clarification
 learning_path_builder.add_node("ask_initial", initial_asker)
@@ -399,7 +435,16 @@ learning_path_builder.add_node("generate_concepts", generate_concept_graph)
 
 # Define the complete flow
 # Step 1 flow
-learning_path_builder.add_edge(START, "ask_initial")
+learning_path_builder.add_conditional_edges(
+    START,
+    route_mode,
+    {
+        AgentMode.BASIC: "basic_chat",
+        AgentMode.LPP: "ask_initial"
+    }
+)
+
+# learning_path_builder.add_edge(START, "ask_initial")
 learning_path_builder.add_edge("ask_initial", "evaluate_intention")
 
 learning_path_builder.add_conditional_edges(
@@ -420,7 +465,14 @@ learning_path_builder.add_edge("format_intention", "define_goal")
 learning_path_builder.add_edge("define_goal", "generate_concepts")
 
 # Step 3 → END
-learning_path_builder.add_edge("generate_concepts", END)
+# learning_path_builder.add_edge("generate_concepts", END)
+
+# After basic chat, go to END
+learning_path_builder.add_edge("basic_chat", END)
+
+# After LPP graph, reset mode then END
+learning_path_builder.add_edge("generate_concepts", "reset_mode")
+learning_path_builder.add_edge("reset_mode", END)
 
 # Compile the complete pipeline
 learning_path_memory = MemorySaver()

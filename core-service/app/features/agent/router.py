@@ -27,7 +27,8 @@ async def start_chat(request: InitChatRequest,  db: AsyncSession = Depends(get_d
             db=db,
             message=request.message,
             thread_id=None,
-            user=user
+            user=user,
+            mode=request.mode
         )
         return response
     except ValueError as e:

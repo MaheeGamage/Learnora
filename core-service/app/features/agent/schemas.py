@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, Any, List, Literal
 
 from app.features.learning_path.schemas import LearningPathResponse
+from app.features.agent.type import AgentMode
 
 class BaseChatRequest(BaseModel):
     """Base schema for chat requests."""
@@ -15,7 +16,7 @@ class ChatRequest(BaseChatRequest):
 class InitChatRequest(BaseChatRequest):
     # make all inputs optional by overriding type + default
     message: Optional[str] = None
-
+    mode: Optional[AgentMode] = AgentMode.BASIC
 
 class ChatMessage(BaseModel):
     """Individual message in a conversation."""

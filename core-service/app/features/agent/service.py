@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Optional, List, Any
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage
 from app.features.agent.learning_path_graph.learning_path_graph import learning_path_graph as graph
+# from app.features.agent.graph import graph
 from app.features.agent.schemas import ChatResponse, ChatMessage
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.learning_path.service import LearningPathService
 from app.features.learning_path.schemas import LearningPathResponse
 from app.features.users.models import User
+from app.features.agent.type import AgentMode
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ class AgentService:
         self.learning_path_service = LearningPathService()
 
     def _determine_graph_stage(
-        self, thread_id: Optional[str], topic: Optional[str]
+        self, thread_id: Optional[str]
     ) -> tuple[GraphStage, str]:
         """
         Determine the graph stage based on thread_id and topic.
@@ -56,7 +58,8 @@ class AgentService:
         db: AsyncSession,
         user: User,
         message: str,
-        thread_id: Optional[str] = None
+        thread_id: Optional[str] = None,
+        mode: Optional[AgentMode] = None,
     ) -> ChatResponse:
         """
         Unified method to handle all graph interactions.
@@ -72,8 +75,14 @@ class AgentService:
         Raises:
             ValueError: If topic is missing for new conversation or thread_id is invalid
         """
+        
+        state = {}
+        
+        # Set mode in state
+        state["mode"] = mode
+        
         # Determine graph stage and get/generate thread_id
-        stage, resolved_thread_id = self._determine_graph_stage(thread_id, topic)
+        stage, resolved_thread_id = self._determine_graph_stage(thread_id)
         
         # Log the stage
         if stage == GraphStage.NEW_CONVERSATION:
@@ -83,8 +92,8 @@ class AgentService:
 
         # Configure graph with thread_id
         config = {"configurable": {"thread_id": resolved_thread_id}}
-        
-        state = {}
+        graph_state = graph.get_state(config)
+        logger.info(f"Graph state for thread {resolved_thread_id}: {graph_state}")
 
         try:
             try:
@@ -102,9 +111,14 @@ class AgentService:
 
                 # Invoke graph based on stage
                 if stage == GraphStage.RESUME_CONVERSATION:
-                    # For existing conversations, update state then invoke
-                    graph.update_state(config, state)
-                    result = graph.invoke(None, config)
+                    if graph_state.next:
+                        logger.info(f"Resuming from interrupt for thread {resolved_thread_id}")
+                        # For existing conversations, update state then invoke
+                        graph.update_state(config, state)
+                        result = graph.invoke(None, config)
+                    else:
+                        # For existing conversations, invoke with no state update
+                        result = graph.invoke(state, config)
                 else:
                     # For new conversations, invoke with full state
                     result = graph.invoke(state, config)
@@ -183,7 +197,6 @@ class AgentService:
             
             # Extract values from state
             messages = state.values.get("messages", [])
-            topic = state.values.get("topic")
             
             # Parse learning path if completed
             learning_path = None
@@ -197,7 +210,6 @@ class AgentService:
                 thread_id=thread_id,
                 status=status,
                 messages=formatted_messages,
-                topic=topic,
                 learning_path=learning_path
             )
             
