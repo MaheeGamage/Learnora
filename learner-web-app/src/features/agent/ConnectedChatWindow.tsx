@@ -19,12 +19,10 @@ export interface ConnectedChatWindowProps {
  * - Managing loading states
  */
 export function ConnectedChatWindow({
-  agentTitle = 'AI Learning Assistant',
-  initialTopic = 'General Learning',
+  agentTitle = 'AI Learning Assistant'
 }: ConnectedChatWindowProps): ReactNode {
   const [threadId, setThreadId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const topic = initialTopic;
 
   const startChatMutation = useStartChat();
   const continueChatMutation = useContinueChat(threadId || '');
@@ -57,14 +55,12 @@ export function ConnectedChatWindow({
     if (threadId) {
       // Continue existing chat session
       continueChatMutation.mutate({
-        message,
-        topic,
+        message
       });
     } else {
       // Start a new chat session
       startChatMutation.mutate({
-        message,
-        topic,
+        message
       });
     }
   };
