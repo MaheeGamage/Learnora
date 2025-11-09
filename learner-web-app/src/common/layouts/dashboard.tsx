@@ -73,10 +73,10 @@ export default function MainDashboardLayout() {
     >
       <ChatPanelWrapper
         defaultOpen={true}
-        width={350}
+        width={360}
         chatComponent={<ConnectedChatWindow
           agentTitle="AI Learning Assistant"
-          initialTopic="Python Programming" // TODO: Get this from user input
+          // initialTopic="Python Programming" // TODO: Get this from user input
         />}
       >
         <PageContainer title=''>

@@ -14,9 +14,14 @@ import {
   Alert,
   Stack,
   Typography,
+  Button,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import LearningPathVisualization from "./LearningPathVisualization";
 import { useLearningPaths, useLearningPath } from "../queries";
+import { useStartChat } from "../../agent/queries";
+import { AgentMode } from "../../agent/types";
+import { useChatContext } from "../../../hooks/useChatContext";
 import type { JsonLdDocument } from "jsonld";
 import type { LearningPathResponse } from "../types";
 
@@ -86,6 +91,8 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = ({
   const [selectedPathId, setSelectedPathId] = useState<number | null>(
     initialPathId || null
   );
+  const { clearActiveThread, setActiveThreadId } = useChatContext();
+  const startChatMutation = useStartChat();
 
   const {
     data: learningPaths,
@@ -98,6 +105,26 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = ({
     isLoading: isLoadingPath,
     error: pathError,
   } = useLearningPath(selectedPathId, true);
+
+  const handleCreateNewPath = () => {
+    // Clear any existing thread to start fresh
+    clearActiveThread();
+    
+    // Start a new chat session with LPP mode
+    // User can type their learning topic in the chat window
+    startChatMutation.mutate(
+      {
+        // message: "I want to create a new learning path",
+        mode: AgentMode.LPP,
+      },
+      {
+        onSuccess: (data) => {
+          // Store the new thread ID in context
+          setActiveThreadId(data.thread_id);
+        },
+      }
+    );
+  };
 
   if (isLoadingPaths) {
     return (
@@ -121,6 +148,17 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = ({
 
   return (
     <Box>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Typography variant="h6">Learning Paths</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleCreateNewPath}
+        >
+          Create New Path
+        </Button>
+      </Box>
+
       <FormControl fullWidth sx={{ mb: 2 }}>
         <InputLabel>Select Learning Path</InputLabel>
         <Select

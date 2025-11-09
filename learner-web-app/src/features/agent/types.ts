@@ -20,7 +20,7 @@ export const AgentMode = {
 export type AgentMode = typeof AgentMode[keyof typeof AgentMode];
 
 export type StartChatParams = {
-  message: string;
+  message?: string;
   mode?: AgentMode;
 }
 

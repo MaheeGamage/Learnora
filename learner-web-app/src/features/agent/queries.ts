@@ -23,7 +23,7 @@ export function useStartChat() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (params: { message: string; mode?: AgentMode }) => startChat(params),
+    mutationFn: (params: { message?: string; mode?: AgentMode }) => startChat(params),
     onSuccess: (data: ChatSession) => {
       // Cache the new session
       queryClient.setQueryData(chatKeys.session(data.thread_id), data);

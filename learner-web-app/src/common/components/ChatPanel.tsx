@@ -120,7 +120,7 @@ export function ChatPanelWrapper({ children, defaultOpen = true, width = 350, ch
         sx={{ 
           flexGrow: 1, 
           transition: 'margin-right 0.3s',
-          marginRight: { xs: 0, sm: rightPanelOpen ? `${width}px` : 0 },
+          // marginRight: { xs: 0, sm: rightPanelOpen ? `${width}px` : 0 },
         }}
       >
         {children}

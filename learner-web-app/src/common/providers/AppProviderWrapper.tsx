@@ -3,6 +3,7 @@ import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Authentication } from '@toolpad/core';
 import SessionContext, { type Session } from '../../contexts/SessionContext';
+import { ChatProvider } from '../../contexts/ChatContext';
 import { signOut, getCurrentSession } from '../../features/auth/authService';
 import { NAVIGATION } from '../constant/navigation';
 
@@ -63,7 +64,9 @@ export default function AppProviderWrapper({ children }: Readonly<{ children: Re
         authentication={AUTHENTICATION}
       >
         <SessionContext.Provider value={sessionContextValue}>
-          {children}
+            <ChatProvider>
+            {children}
+            </ChatProvider>
         </SessionContext.Provider>
       </ReactRouterAppProvider>
     </QueryClientProvider>
