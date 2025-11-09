@@ -139,25 +139,37 @@ class AgentService:
             formatted_messages = self._format_messages(result.get("messages", []))
             
             # Parse and save learning path if completed
-            # learning_path_response = None
-            # if status == "completed":
-            #     try:
-            #         learning_path_json = self._parse_learning_path(result.get("messages", []))
-            #         logger.info(f"Parsed learning path JSON for thread {resolved_thread_id}")
+            concept_graph = state.values.get('concept_graph')
+            if concept_graph:
+                try:
+                    # learning_path_json = self._parse_learning_path(result.get("messages", []))
+                    logger.info(f"Parsed learning path JSON for thread {resolved_thread_id}")
                     
-            #         if learning_path_json:
-            #             # Saving learning path to DB and storage if completed
-            #             db_learning_path = await self.learning_path_service.parse_and_save_learning_path(
-            #                 db=db,
-            #                 json_data=learning_path_json,
-            #                 topic=current_topic,
-            #                 user=user
-            #             )
-            #             # Convert SQLAlchemy model to Pydantic schema
-            #             # learning_path_response = LearningPathResponse.model_validate(db_learning_path)
-            #     except Exception as e:
-            #         logger.error(f"Error saving learning path for thread {resolved_thread_id}: {str(e)}")
-            #         raise
+                    db_learning_path = await self.learning_path_service.parse_and_save_learning_path(
+                        db=db,
+                        json_data=concept_graph,
+                        topic=state.values.get('topic'),
+                        user=user
+                    )
+                    # Convert SQLAlchemy model to Pydantic schema
+                    # learning_path_response = LearningPathResponse.model_validate(db_learning_path)
+                    
+                    # Reset all state values after successful save
+                    graph.update_state(config, {
+                        "concept_graph": None,
+                        "desired_outcome": None,
+                        "context": None,
+                        "topic": None,
+                        "is_intention_clear": False,
+                        "follow_up_count": 0,
+                        "learning_goal": None,
+                        "competencies": None,
+                        "success_criteria": None
+                    })
+                    logger.info(f"Reset all state values after saving learning path for thread {resolved_thread_id}")
+                except Exception as e:
+                    logger.error(f"Error saving learning path for thread {resolved_thread_id}: {str(e)}")
+                    raise
             
             return ChatResponse(
                 thread_id=resolved_thread_id,

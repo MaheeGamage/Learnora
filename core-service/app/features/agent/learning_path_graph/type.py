@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, Json
 from langgraph.graph import START, END, MessagesState, StateGraph
 from typing_extensions import Annotated, TypedDict
 from typing import Sequence
@@ -21,6 +21,9 @@ class IntentionState(AgentState):
     desired_outcome: str | None = None  # What the user wants to achieve/do/create
     context: dict | None = None  # Optional: background, timeline, constraints
     topic: str | None = None  # Summarized topic/subject of the learning path
+    
+    # learning path
+    concept_graph: Json  # List of {concept, prerequisites}
     
     # Flow control
     is_intention_clear: bool = False  # Boolean flag: is the intention clear enough?
