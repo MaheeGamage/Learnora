@@ -1,11 +1,12 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { ChatWindow, type ChatMessage } from './ChatWindow';
-import { useStartChat, useContinueChat } from './queries';
-import type { Message } from './types';
+import { useStartChat, useContinueChat, useChatSession } from './queries';
+import { useChatContext } from '../../hooks/useChatContext';
+import type { Message, AgentMode } from './types';
 
 export interface ConnectedChatWindowProps {
   readonly agentTitle?: string;
-  readonly initialTopic?: string;
+  readonly mode?: AgentMode;
 }
 
 /**
@@ -13,21 +14,25 @@ export interface ConnectedChatWindowProps {
  * using React Query for state management.
  * 
  * This component handles:
- * - Starting new chat sessions
+ * - Starting new chat sessions with optional mode (LPP for learning path planning)
  * - Continuing existing chat sessions
+ * - Loading messages from ChatContext active thread
  * - Converting between API message format and UI message format
  * - Managing loading states
+ * - Automatically syncing thread ID with ChatContext
  */
 export function ConnectedChatWindow({
   agentTitle = 'AI Learning Assistant',
-  initialTopic = 'General Learning',
+  mode,
 }: ConnectedChatWindowProps): ReactNode {
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const { activeThreadId, setActiveThreadId } = useChatContext();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const topic = initialTopic;
 
   const startChatMutation = useStartChat();
-  const continueChatMutation = useContinueChat(threadId || '');
+  const continueChatMutation = useContinueChat(activeThreadId || '');
+  
+  // Hook to load existing chat session from ChatContext
+  const { data: existingSession } = useChatSession(activeThreadId);
 
   // Convert API Message format to UI ChatMessage format
   const convertToUIMessage = (apiMessage: Message, index: number): ChatMessage => ({
@@ -41,10 +46,11 @@ export function ConnectedChatWindow({
   useEffect(() => {
     if (startChatMutation.isSuccess && startChatMutation.data) {
       const { thread_id, messages: apiMessages } = startChatMutation.data;
-      setThreadId(thread_id);
+      // Store thread ID in ChatContext (also saves to localStorage)
+      setActiveThreadId(thread_id);
       setMessages(apiMessages.map(convertToUIMessage));
     }
-  }, [startChatMutation.isSuccess, startChatMutation.data]);
+  }, [startChatMutation.isSuccess, startChatMutation.data, setActiveThreadId]);
 
   useEffect(() => {
     if (continueChatMutation.isSuccess && continueChatMutation.data) {
@@ -53,18 +59,26 @@ export function ConnectedChatWindow({
     }
   }, [continueChatMutation.isSuccess, continueChatMutation.data]);
 
+  // Load messages from ChatContext active thread when it changes
+  useEffect(() => {
+    if (existingSession?.messages) {
+      setMessages(existingSession.messages.map(convertToUIMessage));
+    }
+  }, [existingSession?.messages]);
+
   const handleSendMessage = (message: string) => {
-    if (threadId) {
+    if (activeThreadId) {
       // Continue existing chat session
       continueChatMutation.mutate({
         message,
-        topic,
+        mode,
       });
     } else {
-      // Start a new chat session
+      // Start a new chat session with optional mode
+      // Only if no thread exists (defensive - normally thread should be created externally)
       startChatMutation.mutate({
         message,
-        topic,
+        mode,
       });
     }
   };

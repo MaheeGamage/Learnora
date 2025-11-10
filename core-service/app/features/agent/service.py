@@ -4,7 +4,8 @@ import re
 from enum import Enum
 from typing import Optional, List, Any
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage
-from app.features.agent.graph import graph, LearningPathState
+from app.features.agent.learning_path_graph.learning_path_graph import learning_path_graph as graph
+# from app.features.agent.graph import graph
 from app.features.agent.schemas import ChatResponse, ChatMessage
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.learning_path.service import LearningPathService
 from app.features.learning_path.schemas import LearningPathResponse
 from app.features.users.models import User
+from app.features.agent.type import AgentMode
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ class AgentService:
         self.learning_path_service = LearningPathService()
 
     def _determine_graph_stage(
-        self, thread_id: Optional[str], topic: Optional[str]
+        self, thread_id: Optional[str]
     ) -> tuple[GraphStage, str]:
         """
         Determine the graph stage based on thread_id and topic.
@@ -46,8 +48,6 @@ class AgentService:
         """
         if thread_id is None:
             # Starting a new conversation
-            if not topic:
-                raise ValueError("Topic is required for new conversations")
             return GraphStage.NEW_CONVERSATION, str(uuid.uuid4())
         else:
             # Resuming an existing conversation
@@ -59,7 +59,7 @@ class AgentService:
         user: User,
         message: str,
         thread_id: Optional[str] = None,
-        topic: Optional[str] = None,
+        mode: Optional[AgentMode] = None,
     ) -> ChatResponse:
         """
         Unified method to handle all graph interactions.
@@ -75,8 +75,14 @@ class AgentService:
         Raises:
             ValueError: If topic is missing for new conversation or thread_id is invalid
         """
+        
+        state = {}
+        
+        # Set mode in state
+        state["mode"] = mode
+        
         # Determine graph stage and get/generate thread_id
-        stage, resolved_thread_id = self._determine_graph_stage(thread_id, topic)
+        stage, resolved_thread_id = self._determine_graph_stage(thread_id)
         
         # Log the stage
         if stage == GraphStage.NEW_CONVERSATION:
@@ -86,15 +92,15 @@ class AgentService:
 
         # Configure graph with thread_id
         config = {"configurable": {"thread_id": resolved_thread_id}}
-        
-        state = {}
+        graph_state = graph.get_state(config)
+        logger.info(f"Graph state for thread {resolved_thread_id}: {graph_state}")
 
         try:
             try:
                 # Build state based on graph stage
-                if stage == GraphStage.NEW_CONVERSATION:
+                # if stage == GraphStage.NEW_CONVERSATION:
                     # For new conversations, set topic
-                    state = {"topic": topic}
+                    # state = {"topic": topic}
                 
                 # Add message to state if provided
                 if message:
@@ -105,9 +111,14 @@ class AgentService:
 
                 # Invoke graph based on stage
                 if stage == GraphStage.RESUME_CONVERSATION:
-                    # For existing conversations, update state then invoke
-                    graph.update_state(config, state)
-                    result = graph.invoke(None, config)
+                    if graph_state.next:
+                        logger.info(f"Resuming from interrupt for thread {resolved_thread_id}")
+                        # For existing conversations, update state then invoke
+                        graph.update_state(config, state)
+                        result = graph.invoke(None, config)
+                    else:
+                        # For existing conversations, invoke with no state update
+                        result = graph.invoke(state, config)
                 else:
                     # For new conversations, invoke with full state
                     result = graph.invoke(state, config)
@@ -119,41 +130,53 @@ class AgentService:
             state = graph.get_state(config)
             
             # Determine conversation status
-            status = self._determine_status(state)
+            # status = self._determine_status(state)
             
             # Extract topic from state
-            current_topic = result.get("topic") if result else None
+            # current_topic = result.get("topic") if result else None
             
             # Format messages
             formatted_messages = self._format_messages(result.get("messages", []))
             
             # Parse and save learning path if completed
-            learning_path_response = None
-            if status == "completed":
+            concept_graph = state.values.get('concept_graph')
+            if concept_graph:
                 try:
-                    learning_path_json = self._parse_learning_path(result.get("messages", []))
+                    # learning_path_json = self._parse_learning_path(result.get("messages", []))
                     logger.info(f"Parsed learning path JSON for thread {resolved_thread_id}")
                     
-                    if learning_path_json:
-                        # Saving learning path to DB and storage if completed
-                        db_learning_path = await self.learning_path_service.parse_and_save_learning_path(
-                            db=db,
-                            json_data=learning_path_json,
-                            topic=current_topic,
-                            user=user
-                        )
-                        # Convert SQLAlchemy model to Pydantic schema
-                        # learning_path_response = LearningPathResponse.model_validate(db_learning_path)
+                    db_learning_path = await self.learning_path_service.parse_and_save_learning_path(
+                        db=db,
+                        json_data=concept_graph,
+                        topic=state.values.get('topic'),
+                        user=user
+                    )
+                    # Convert SQLAlchemy model to Pydantic schema
+                    # learning_path_response = LearningPathResponse.model_validate(db_learning_path)
+                    
+                    # Reset all state values after successful save
+                    graph.update_state(config, {
+                        "concept_graph": None,
+                        "desired_outcome": None,
+                        "context": None,
+                        "topic": None,
+                        "is_intention_clear": False,
+                        "follow_up_count": 0,
+                        "learning_goal": None,
+                        "competencies": None,
+                        "success_criteria": None
+                    })
+                    logger.info(f"Reset all state values after saving learning path for thread {resolved_thread_id}")
                 except Exception as e:
                     logger.error(f"Error saving learning path for thread {resolved_thread_id}: {str(e)}")
                     raise
             
             return ChatResponse(
                 thread_id=resolved_thread_id,
-                status=status,
+                # status=status,
                 messages=formatted_messages,
-                topic=current_topic,
-                learning_path=learning_path_response
+                # topic=current_topic,
+                # learning_path=learning_path_response
             )
 
         except Exception as e:
@@ -186,7 +209,6 @@ class AgentService:
             
             # Extract values from state
             messages = state.values.get("messages", [])
-            topic = state.values.get("topic")
             
             # Parse learning path if completed
             learning_path = None
@@ -200,7 +222,6 @@ class AgentService:
                 thread_id=thread_id,
                 status=status,
                 messages=formatted_messages,
-                topic=topic,
                 learning_path=learning_path
             )
             

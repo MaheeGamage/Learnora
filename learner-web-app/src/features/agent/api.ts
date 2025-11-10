@@ -1,15 +1,5 @@
 import apiClient from "../../api/baseClient";
-import type { ChatSession } from "./types";
-
-type StartChatParams = {
-  message: string;
-  topic: string;
-}
-
-type ContinueChatParams = {
-  message: string;
-  topic?: string;
-}
+import type { ChatSession, ContinueChatParams, StartChatParams } from "./types";
 
 // Create a new chat session
 export const startChat = async (params: StartChatParams): Promise<ChatSession> => {

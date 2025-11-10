@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { startChat, continueChat, getChatSession } from './api';
-import type { ChatSession } from './types';
+import type { AgentMode, ChatSession } from './types';
 
 // Query keys
 export const chatKeys = {
@@ -23,7 +23,7 @@ export function useStartChat() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (params: { message: string; topic: string }) => startChat(params),
+    mutationFn: (params: { message?: string; mode?: AgentMode }) => startChat(params),
     onSuccess: (data: ChatSession) => {
       // Cache the new session
       queryClient.setQueryData(chatKeys.session(data.thread_id), data);
@@ -36,7 +36,7 @@ export function useContinueChat(threadId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (params: { message: string; topic?: string }) => 
+    mutationFn: (params: { message: string; mode?: AgentMode }) => 
       continueChat(threadId, params),
     onSuccess: (data: ChatSession) => {
       // Update the cached session
