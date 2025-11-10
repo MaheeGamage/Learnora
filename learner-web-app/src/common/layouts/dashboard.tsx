@@ -67,9 +67,9 @@ export default function MainDashboardLayout() {
 
   return (
     <DashboardLayout
-      slots={{
-        toolbarActions: ToolbarActionsSearch
-      }}
+      // slots={{
+      //   toolbarActions: ToolbarActionsSearch
+      // }}
     >
       <ChatPanelWrapper
         defaultOpen={true}
