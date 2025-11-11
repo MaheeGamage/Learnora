@@ -136,21 +136,75 @@ class LearningPathService:
 
     # ===== Knowledge Graph Operations =====
 
-    def extract_learning_path_graph(self, user_graph: RDFGraph, learning_path_uri: URIRef) -> Any:
-        """Extract a subgraph for the learning path and return parsed JSON-LD as Python objects.
+    # def extract_learning_path_graph(self, user_graph: RDFGraph, learning_path_uri: URIRef) -> Any:
+    #     """Extract a subgraph for the learning path and return parsed JSON-LD as Python objects.
 
-        Returns a Python structure (usually a list/dict) suitable for returning from FastAPI without
-        requiring the client to re-parse a serialized JSON string.
+    #     Returns a Python structure (usually a list/dict) suitable for returning from FastAPI without
+    #     requiring the client to re-parse a serialized JSON string.
+    #     """
+    #     try:
+    #         subgraph = extract_subgraph(user_graph, learning_path_uri, max_depth=2)
+    #         jsonld_str = subgraph.serialize(format="json-ld", indent=4)
+    #         # Parse the JSON-LD string into Python objects so the API returns JSON types
+    #         parsed = json.loads(jsonld_str)
+    #         return parsed
+    #     except Exception as e:
+    #         logger.error("JSON-LD serialization or parsing failed: %s", str(e))
+    #         raise
+
+    def extract_learning_path_graph(
+        self,
+        user_graph: RDFGraph,
+        learning_path_uri: URIRef,
+        include_users: bool = True,
+        include_goals: bool = True
+    ) -> RDFGraph:
         """
-        try:
-            subgraph = extract_subgraph(user_graph, learning_path_uri, max_depth=2)
-            jsonld_str = subgraph.serialize(format="json-ld", indent=4)
-            # Parse the JSON-LD string into Python objects so the API returns JSON types
-            parsed = json.loads(jsonld_str)
-            return parsed
-        except Exception as e:
-            logger.error("JSON-LD serialization or parsing failed: %s", str(e))
-            raise
+        Extracts all triples related to a given learning path from an RDF graph.
+
+        Args:
+            user_graph (Graph): Original RDF graph.
+            learning_path_uri (URIRef): URI of the learning path to extract.
+            include_users (bool): Whether to include users following the path.
+            include_goals (bool): Whether to include the learning path's goal.
+
+        Returns:
+            Graph: New RDF graph containing the learning path and related concepts, 
+                and optionally users and goals.
+        """
+        result_graph = RDFGraph()
+        visited = set()
+
+        def add_related_concepts(concept_uri):
+            """Recursively add a concept and its prerequisites."""
+            if concept_uri in visited:
+                return
+            visited.add(concept_uri)
+
+            for s, p, o in user_graph.triples((concept_uri, None, None)):
+                result_graph.add((s, p, o))
+                if p == self.kg_base.ONT.hasPrerequisite:
+                    add_related_concepts(o)
+
+        # Add learning path triple itself
+        for s, p, o in user_graph.triples((learning_path_uri, None, None)):
+            result_graph.add((s, p, o))
+
+            # Add included concepts recursively
+            if p == self.kg_base.ONT.includesConcept:
+                add_related_concepts(o)
+
+            # Optionally add goal
+            if include_goals and p == self.kg_base.ONT.hasGoal:
+                for goal_s, goal_p, goal_o in user_graph.triples((o, None, None)):
+                    result_graph.add((goal_s, goal_p, goal_o))
+
+        # Optionally include users who follow this path
+        if include_users:
+            for user_s, user_p, user_o in user_graph.triples((None, self.kg_base.ONT.followsPath, learning_path_uri)):
+                result_graph.add((user_s, user_p, user_o))
+
+        return json.loads(result_graph.serialize(format='json-ld', indent=4))
 
     # ===== Helper Methods =====
 
