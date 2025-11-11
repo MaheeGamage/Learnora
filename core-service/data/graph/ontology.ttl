@@ -20,6 +20,10 @@ ont:LearningPath a owl:Class ;
     rdfs:label "Learning Path" ;
     rdfs:comment "A structured sequence of concepts to learn for achieving a learning goal" .
 
+ont:Goal a owl:Class ;
+    rdfs:label "Learning Goal"
+    rdfs:comment "Final target of given learning path"
+
 ont:User a owl:Class ;
     rdfs:label "Learner User" ;
     rdfs:comment "A user of the Learnora learning platform" .
@@ -62,6 +66,12 @@ ont:isFollowedBy a owl:ObjectProperty ;
     rdfs:domain ont:LearningPath ;
     rdfs:range ont:User ;
     owl:inverseOf ont:followsPath .
+
+ont:hasGoal a owl:ObjectProperty ;
+    rdfs:label "learning path has a goal" ;
+    rdfs:comment "Indicate the goal of a given learning path" ;
+    rdfs:domain ont:LearningPath ;
+    rdfs:range ont:Goal .
 
 # ===== Datatype Properties =====
 

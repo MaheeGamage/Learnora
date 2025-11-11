@@ -149,6 +149,7 @@ class AgentService:
                         db=db,
                         json_data=concept_graph,
                         topic=state.values.get('topic'),
+                        goal=state.values.get('desired_outcome'),
                         user=user
                     )
                     # Convert SQLAlchemy model to Pydantic schema

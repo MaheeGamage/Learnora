@@ -154,13 +154,15 @@ class LearningPathService:
 
     # ===== Helper Methods =====
 
-    def convert_learning_path_json_to_rdf_graph(self, json_data: List[Dict[str, Any]], topic: str, db_learning_path: LearningPath) -> Tuple[RDFGraph, URIRef]:
+    def convert_learning_path_json_to_rdf_graph(self, json_data: List[Dict[str, Any]], topic: str, goal: str, db_learning_path: LearningPath) -> Tuple[RDFGraph, URIRef]:
         """
         Convert JSON-based learning graph to RDF graph and save it.
 
         Args:
             json_data: List of dicts with 'concept' and 'prerequisites' keys
-            user_id: User identifier for saving the graph
+            topic: Topic of the learning path
+            goal: Goal of the learning path
+            db_learning_path: Database learning path object
 
         Example:
             json_data = [
@@ -177,6 +179,12 @@ class LearningPathService:
         graph.add((learning_path_uri, self.kg_base.RDF.type,
                   self.kg_base.ONT.LearningPath))
         graph.add((learning_path_uri, self.kg_base.ONT.topic, Literal(topic)))
+        
+        # Create and link Goal
+        goal_uri = self.kg_base.ONT[normalize_string(f"goal_{db_learning_path.id}")]
+        graph.add((goal_uri, self.kg_base.RDF.type, self.kg_base.ONT.Goal))
+        graph.add((goal_uri, self.kg_base.ONT.label, Literal(goal)))
+        graph.add((learning_path_uri, self.kg_base.ONT.hasGoal, goal_uri))
 
         # Process each concept in the JSON data
         for item in json_data:
@@ -207,7 +215,7 @@ class LearningPathService:
 
         return graph, learning_path_uri
 
-    async def parse_and_save_learning_path(self, db: AsyncSession, json_data: List[Dict[str, Any]], topic: str, user: User) -> LearningPath:
+    async def parse_and_save_learning_path(self, db: AsyncSession, json_data: List[Dict[str, Any]], topic: str, goal: str, user: User) -> LearningPath:
 
         learning_path_create_obj = LearningPathCreate(
             user_id=user.id,
@@ -221,7 +229,7 @@ class LearningPathService:
         )
 
         parsed_graph, learning_path_uri = self.convert_learning_path_json_to_rdf_graph(
-            json_data, topic, db_learning_path=db_learning_path)
+            json_data, topic, goal, db_learning_path=db_learning_path)
 
         # update learning path with graph URI
         updated_db_learning_path = await crud.update_learning_path(
