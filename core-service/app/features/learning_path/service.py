@@ -156,7 +156,7 @@ class LearningPathService:
         self,
         user_graph: RDFGraph,
         learning_path_uri: URIRef,
-        include_users: bool = True,
+        include_users: bool = False,
         include_goals: bool = True
     ) -> RDFGraph:
         """
