@@ -14,7 +14,6 @@ import {
 import '@xyflow/react/dist/style.css';
 import { jsonldToFlow, type FlowNodeData } from '../utils/jsonldToFlow';
 import type { JsonLdDocument } from 'jsonld';
-import { Box } from '@mui/material';
 
 interface LearningPathFlowProps {
     jsonldData: JsonLdDocument | JsonLdDocument[] | null;
@@ -49,7 +48,7 @@ export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFl
   );
  
   return (
-    <Box sx={{ width: '200px', height: '100%' }}>
+    <div style={{ width: '100vw', height: '100vh' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -58,6 +57,6 @@ export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFl
         onConnect={onConnect}
         fitView
       />
-    </Box>
+    </div>
   );
 }
