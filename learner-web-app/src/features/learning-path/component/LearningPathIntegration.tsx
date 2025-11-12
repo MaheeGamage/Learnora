@@ -17,13 +17,14 @@ import {
   Button,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import LearningPathVisualization from "./LearningPathVisualization";
+// import LearningPathVisualization from "./LearningPathVisualization";
 import { useLearningPaths, useLearningPath } from "../queries";
 import { useStartChat } from "../../agent/queries";
 import { AgentMode } from "../../agent/types";
 import { useChatContext } from "../../../hooks/useChatContext";
 import type { JsonLdDocument } from "jsonld";
 import type { LearningPathResponse } from "../types";
+import LearningPathFlow from "./LearningPathFlow";
 
 interface LearningPathIntegrationProps {
   initialPathId?: number;
@@ -73,11 +74,12 @@ function renderContent(
         )}
       </Box>
       {selectedPath.kg_data ? (
-        <LearningPathVisualization
-          jsonldData={selectedPath.kg_data as JsonLdDocument}
-          height="600px"
-          width="100%"
-        />
+        // <LearningPathVisualization
+        //   jsonldData={selectedPath.kg_data as JsonLdDocument}
+        //   height="600px"
+        //   width="100%"
+        // />
+        <LearningPathFlow jsonldData={selectedPath.kg_data as JsonLdDocument}/>
       ) : (
         <Alert severity="info">No knowledge graph data available for this learning path</Alert>
       )}
@@ -109,7 +111,7 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = ({
   const handleCreateNewPath = () => {
     // Clear any existing thread to start fresh
     clearActiveThread();
-    
+
     // Start a new chat session with LPP mode
     // User can type their learning topic in the chat window
     startChatMutation.mutate(
