@@ -1,62 +1,68 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  ReactFlow,
-  addEdge,
-  applyNodeChanges,
-  applyEdgeChanges,
-  type Node,
-  type Edge,
-  type OnConnect,
-  type OnNodesChange,
-  type OnEdgesChange,
-  
+    ReactFlow,
+    addEdge,
+    applyNodeChanges,
+    applyEdgeChanges,
+    type Node,
+    type Edge,
+    type OnConnect,
+    type OnNodesChange,
+    type OnEdgesChange,
+    Background,
+    Controls,
+
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { jsonldToFlow, type FlowNodeData } from '../utils/jsonldToFlow';
 import type { JsonLdDocument } from 'jsonld';
+import Box from '@mui/material/Box';
 
 interface LearningPathFlowProps {
     jsonldData: JsonLdDocument | JsonLdDocument[] | null;
 }
- 
-export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFlowProps>) {
-  const [nodes, setNodes] = useState<Node<FlowNodeData>[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
 
-  useEffect(() => {
-    if (!jsonldData) {
-      setNodes([]);
-      setEdges([]);
-      return;
-    }
-    const { nodes, edges } = jsonldToFlow(Array.isArray(jsonldData) ? jsonldData : [jsonldData]);
-    setNodes(nodes);
-    setEdges(edges);
-  }, [jsonldData]);
- 
-  const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds) as Node<FlowNodeData>[]),
-    [setNodes],
-  );
-  const onEdgesChange: OnEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges],
-  );
-  const onConnect: OnConnect = useCallback(
-    (connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges],
-  );
- 
-  return (
-    <div style={{ width: '100vw', height: '100vh' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        fitView
-      />
-    </div>
-  );
+export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFlowProps>) {
+    const [nodes, setNodes] = useState<Node<FlowNodeData>[]>([]);
+    const [edges, setEdges] = useState<Edge[]>([]);
+
+    useEffect(() => {
+        if (!jsonldData) {
+            setNodes([]);
+            setEdges([]);
+            return;
+        }
+        const { nodes, edges } = jsonldToFlow(Array.isArray(jsonldData) ? jsonldData : [jsonldData]);
+        setNodes(nodes);
+        setEdges(edges);
+    }, [jsonldData]);
+
+    const onNodesChange: OnNodesChange = useCallback(
+        (changes) => setNodes((nds) => applyNodeChanges(changes, nds) as Node<FlowNodeData>[]),
+        [setNodes],
+    );
+    const onEdgesChange: OnEdgesChange = useCallback(
+        (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+        [setEdges],
+    );
+    const onConnect: OnConnect = useCallback(
+        (connection) => setEdges((eds) => addEdge(connection, eds)),
+        [setEdges],
+    );
+
+    return (
+        <Box sx={{ width: '100%', height: '50vh', border: '1px solid #ccc', borderRadius: '4px' }}>
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                fitView
+            >
+                <Background />
+                <Controls />
+            </ReactFlow>
+        </Box>
+    );
 }
