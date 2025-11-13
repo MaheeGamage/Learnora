@@ -155,6 +155,7 @@ export function jsonldToFlow(
         id: id,
         position: { x, y },
         data: { label: meta.label, originalId: meta.id, type: meta.type },
+        type: 'node-with-toolbar',
       });
       index += 1;
     }
