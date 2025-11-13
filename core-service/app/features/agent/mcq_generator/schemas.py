@@ -65,6 +65,9 @@ class MCQGenerationRequest(BaseModel):
         le=20,
         description="Number of questions to generate (1-20)"
     )
+    learning_path_db_id: int = Field(
+        description="Database ID of the learning path to use for context"
+    )
     learning_path: Optional[List[Dict]] = Field(
         default=None,
         description="Optional learning path in JSON-LD format for context"

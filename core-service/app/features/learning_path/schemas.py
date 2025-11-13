@@ -36,6 +36,8 @@ class LearningPathResponse(LearningPathBase):
     graph_uri: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    topic: Optional[str] = None
+    user_id: int
     # kg_data now returns parsed JSON-LD (as Python objects) instead of a raw JSON string
     kg_data: Optional[Any] = None
     

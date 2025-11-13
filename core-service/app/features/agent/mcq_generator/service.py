@@ -1,9 +1,11 @@
 """MCQ Generation Agent Service using LangChain."""
 
 from typing import Optional, List, Dict
-from langchain import init_chat_model
+from xml.etree.ElementInclude import include
+from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
-from langchain_core.tools import ToolStrategy
+from langchain.agents.structured_output import ToolStrategy
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.agent.mcq_generator.schemas import (
     MCQGenerationResponse,
@@ -11,6 +13,8 @@ from app.features.agent.mcq_generator.schemas import (
     DifficultyLevel,
 )
 from app.features.agent.mcq_generator.utils import build_learning_path_context
+from app.features.learning_path.service import LearningPathService
+from app.features.users.models import User
 
 
 class MCQGeneratorAgent:
@@ -123,10 +127,13 @@ Focus on creating questions that help learners verify they truly understand the 
     
     async def generate_mcqs(
         self,
+        db: AsyncSession,
+        current_user: User,
         concept_name: str,
         difficulty_level: DifficultyLevel,
         question_count: int,
         concept_description: Optional[str] = None,
+        learning_path_db_id: Optional[int] = None,
         learning_path: Optional[List[Dict]] = None,
         concept_id: Optional[str] = None
     ) -> MCQGenerationResponse:
@@ -147,9 +154,20 @@ Focus on creating questions that help learners verify they truly understand the 
         Raises:
             Exception: If agent fails to generate valid MCQs
         """
-        # Build learning path context
-        lp_context = build_learning_path_context(learning_path, concept_id)
         
+        # Build learning path context
+        lp_context = ""
+        if(learning_path_db_id):
+            lp_service = LearningPathService()
+            learning_path = await lp_service.get_learning_path(
+                db = db, 
+                learning_path_id=learning_path_db_id,
+                current_user=current_user,
+                include_kg=True
+            )
+            lp_context = build_learning_path_context(learning_path.kg_data, concept_id)
+        
+
         # Use default description if not provided
         description = concept_description or "No additional context provided."
         
@@ -180,51 +198,52 @@ Focus on creating questions that help learners verify they truly understand the 
         
         return structured_response
     
-    def generate_mcqs_sync(
-        self,
-        concept_name: str,
-        difficulty_level: DifficultyLevel,
-        question_count: int,
-        concept_description: Optional[str] = None,
-        learning_path: Optional[List[Dict]] = None,
-        concept_id: Optional[str] = None
-    ) -> MCQGenerationResponse:
-        """
-        Synchronous version of generate_mcqs.
+    # TODO: Delete on 21 Nov 2025 if this no used till this date
+    # def generate_mcqs_sync(
+    #     self,
+    #     concept_name: str,
+    #     difficulty_level: DifficultyLevel,
+    #     question_count: int,
+    #     concept_description: Optional[str] = None,
+    #     learning_path: Optional[List[Dict]] = None,
+    #     concept_id: Optional[str] = None
+    # ) -> MCQGenerationResponse:
+    #     """
+    #     Synchronous version of generate_mcqs.
         
-        Args:
-            Same as generate_mcqs
+    #     Args:
+    #         Same as generate_mcqs
             
-        Returns:
-            MCQGenerationResponse with generated questions
-        """
-        # Build learning path context
-        lp_context = build_learning_path_context(learning_path, concept_id)
+    #     Returns:
+    #         MCQGenerationResponse with generated questions
+    #     """
+    #     # Build learning path context
+    #     lp_context = build_learning_path_context(learning_path, concept_id)
         
-        # Use default description if not provided
-        description = concept_description or "No additional context provided."
+    #     # Use default description if not provided
+    #     description = concept_description or "No additional context provided."
         
-        # Build the user prompt
-        user_prompt = self._build_user_prompt(
-            concept_name=concept_name,
-            concept_description=description,
-            learning_path_context=lp_context,
-            difficulty_level=difficulty_level.value,
-            question_count=question_count
-        )
+    #     # Build the user prompt
+    #     user_prompt = self._build_user_prompt(
+    #         concept_name=concept_name,
+    #         concept_description=description,
+    #         learning_path_context=lp_context,
+    #         difficulty_level=difficulty_level.value,
+    #         question_count=question_count
+    #     )
         
-        # Invoke the agent synchronously
-        result = self.agent.invoke({
-            "messages": [{"role": "user", "content": user_prompt}]
-        })
+    #     # Invoke the agent synchronously
+    #     result = self.agent.invoke({
+    #         "messages": [{"role": "user", "content": user_prompt}]
+    #     })
         
-        # Extract structured response
-        structured_response = result.get("structured_response")
+    #     # Extract structured response
+    #     structured_response = result.get("structured_response")
         
-        if not structured_response:
-            raise Exception("Agent failed to generate structured MCQ response")
+    #     if not structured_response:
+    #         raise Exception("Agent failed to generate structured MCQ response")
         
-        return structured_response
+    #     return structured_response
 
 
 # Singleton instance
