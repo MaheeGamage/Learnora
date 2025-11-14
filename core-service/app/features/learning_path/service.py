@@ -157,7 +157,7 @@ class LearningPathService:
         self,
         user_graph: RDFGraph,
         learning_path_uri: URIRef,
-        include_users: bool = False,
+        include_users: bool = True,
         include_goals: bool = True
     ) -> RDFGraph:
         """
@@ -305,3 +305,85 @@ class LearningPathService:
         self.storage.save_user_graph(str(user.id), parsed_graph)
 
         return updated_db_learning_path
+
+    async def update_learning_path_kg(
+        self,
+        db: AsyncSession,
+        learning_path_id: int,
+        kg_jsonld: List[Dict[str, Any]],
+        current_user: User,
+        goal: Optional[str] = None
+    ) -> Optional[LearningPath]:
+        """
+        Update a learning path's knowledge graph with JSON-LD data.
+        
+        Args:
+            db: Database session
+            learning_path_id: ID of the learning path to update
+            kg_jsonld: JSON-LD format data (array of objects)
+            current_user: Current authenticated user
+            goal: Optional goal to update
+            
+        Returns:
+            Updated LearningPath object with kg_data attached
+        """
+        # Get the learning path and verify authorization
+        learning_path = await crud.get_learning_path_by_id(db, learning_path_id)
+        
+        if not learning_path:
+            return None
+        
+        if learning_path.user_id != current_user.id:
+            raise HTTPException(
+                status_code=403, detail="Not authorized to update this learning path")
+        
+        try:
+            # Load existing user graph
+            user_graph = self.storage.load_user_graph(str(current_user.id))
+            
+            # Get the learning path URI
+            lp_uri = URIRef(learning_path.graph_uri)
+            
+            # Clear existing learning path triples from the graph
+            # Remove all triples related to this learning path
+            triples_to_remove = list(user_graph.triples((lp_uri, None, None)))
+            for triple in triples_to_remove:
+                user_graph.remove(triple)
+            
+            # Also remove triples where this learning path is the object
+            triples_to_remove = list(user_graph.triples((None, None, lp_uri)))
+            for triple in triples_to_remove:
+                user_graph.remove(triple)
+            
+            # Convert JSON-LD back to RDF graph and add to user graph
+            new_graph = RDFGraph()
+            new_graph.parse(data=json.dumps(kg_jsonld), format='json-ld')
+            
+            # Add all triples from the new graph to user graph
+            for s, p, o in new_graph:
+                user_graph.add((s, p, o))
+            
+            # Update goal if provided
+            if goal:
+                # Find and update the goal node
+                goal_nodes = list(user_graph.subjects(RDF.type, self.kg_base.ONT.Goal))
+                for goal_node in goal_nodes:
+                    # Check if this goal belongs to the learning path
+                    if (lp_uri, self.kg_base.ONT.hasGoal, goal_node) in user_graph:
+                        user_graph.remove((goal_node, self.kg_base.ONT.label, None))
+                        user_graph.add((goal_node, self.kg_base.ONT.label, Literal(goal)))
+                        break
+            
+            # Save the updated graph (replace mode to avoid re-merging deleted triples)
+            self.storage.save_user_graph(str(current_user.id), user_graph, replace=True)
+            
+            # Attach KG data to response
+            learning_path.kg_data = kg_jsonld
+            
+            logger.info(f"Successfully updated learning path {learning_path_id} knowledge graph")
+            return learning_path
+            
+        except Exception as e:
+            logger.error(f"Error updating learning path KG: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to update learning path knowledge graph: {str(e)}")

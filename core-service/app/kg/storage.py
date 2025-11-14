@@ -37,26 +37,33 @@ class KGStorage(KGBase):
         logger.info(f"Loaded user {user_id} graph with {len(graph)} triples")
         return graph
     
-    def save_user_graph(self, user_id: str, graph: Graph) -> None:
+    def save_user_graph(self, user_id: str, graph: Graph, replace: bool = False) -> None:
         """
         Save a user's complete graph (knowledge + learning paths).
-        If the file exists and loads successfully, update it. If not, create a new file.
         
         Args:
             user_id: User identifier
             graph: Graph containing user's knowledge and learning paths
+            replace: If True, replace entire file. If False (default), merge with existing.
         """
         file_path = KGConfig.get_user_file_path(user_id)
-        existing_graph = self.load_graph(file_path)
-        if existing_graph is None:
-            # File does not exist or failed to load, create new file
+        
+        if replace:
+            # Replace mode: just save the new graph
             self.save_graph(graph, file_path)
-            logger.info(f"Created new user {user_id} graph with {len(graph)} triples")
+            logger.info(f"Replaced user {user_id} graph with {len(graph)} triples")
         else:
-            # File exists, update it
-            merged_graph = existing_graph + graph
-            self.save_graph(merged_graph, file_path)
-            logger.info(f"Updated existing user {user_id} graph with {len(merged_graph)} triples")
+            # Merge mode: existing behavior
+            existing_graph = self.load_graph(file_path)
+            if existing_graph is None:
+                # File does not exist or failed to load, create new file
+                self.save_graph(graph, file_path)
+                logger.info(f"Created new user {user_id} graph with {len(graph)} triples")
+            else:
+                # File exists, update it
+                merged_graph = existing_graph + graph
+                self.save_graph(merged_graph, file_path)
+                logger.info(f"Updated existing user {user_id} graph with {len(merged_graph)} triples")
 
     def user_graph_exists(self, user_id: str) -> bool:
         """

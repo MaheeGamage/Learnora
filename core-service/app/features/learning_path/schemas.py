@@ -31,6 +31,12 @@ class LearningPathUpdate(BaseModel):
     graph_uri: Optional[str] = None
 
 
+class LearningPathKGUpdate(BaseModel):
+    """Schema for updating a learning path's knowledge graph with JSON-LD data."""
+    kg_data: List[Any]  # JSON-LD format array
+    goal: Optional[str] = None  # Optional goal update
+
+
 class LearningPathResponse(LearningPathBase):
     id: int
     graph_uri: Optional[str] = None
