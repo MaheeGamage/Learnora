@@ -1,11 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { startChat, continueChat, getChatSession } from './api';
-import type { AgentMode, ChatSession } from './types';
+import { startChat, continueChat, getChatSession, generateMCQQuestions } from './api';
+import type { AgentMode, ChatSession, MCQGenerationRequest } from './types';
 
 // Query keys
 export const chatKeys = {
   all: ['chat'] as const,
   session: (threadId: string) => [...chatKeys.all, 'session', threadId] as const,
+};
+
+export const mcqKeys = {
+  all: ['mcq'] as const,
+  generate: () => [...mcqKeys.all, 'generate'] as const,
 };
 
 // Hook to fetch a chat session by thread_id
@@ -42,5 +47,12 @@ export function useContinueChat(threadId: string) {
       // Update the cached session
       queryClient.setQueryData(chatKeys.session(threadId), data);
     },
+  });
+}
+
+// Hook to generate MCQ questions
+export function useGenerateMCQ() {
+  return useMutation({
+    mutationFn: (params: MCQGenerationRequest) => generateMCQQuestions(params),
   });
 }
