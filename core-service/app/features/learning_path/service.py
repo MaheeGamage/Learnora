@@ -8,6 +8,7 @@ from typing import List, Dict, Any, Tuple, Optional
 from app.features.learning_path import crud
 from app.features.learning_path.schemas import (
     LearningPathCreate,
+    LearningPathResponse,
     LearningPathUpdate,
 )
 from app.features.learning_path.models import LearningPath
@@ -64,7 +65,7 @@ class LearningPathService:
         learning_path_id: int,
         current_user: User,
         include_kg: bool = False
-    ) -> Optional[LearningPath]:
+    ) -> Optional[LearningPathResponse]:
         """Get a learning path by ID with authorization check."""
         learning_path = await crud.get_learning_path_by_id(db, learning_path_id)
 
