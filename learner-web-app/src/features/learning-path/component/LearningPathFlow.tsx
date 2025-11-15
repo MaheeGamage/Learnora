@@ -1,19 +1,19 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-    ReactFlow,
-    addEdge,
-    applyNodeChanges,
-    applyEdgeChanges,
-    type Node,
-    type Edge,
-    type OnConnect,
-    type OnNodesChange,
-    type OnEdgesChange,
+  ReactFlow,
+  addEdge,
+  applyNodeChanges,
+  applyEdgeChanges,
+  type Node,
+  type Edge,
+  type OnConnect,
+  type OnNodesChange,
+  type OnEdgesChange,
   NodeToolbar,
   Handle,
   Position,
-    Background,
-    Controls,
+  Background,
+  Controls,
 
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -22,30 +22,10 @@ import type { JsonLdDocument } from 'jsonld';
 import { Box, Button, Card, Chip, GlobalStyles } from '@mui/material';
 
 interface LearningPathFlowProps {
-    jsonldData: JsonLdDocument | JsonLdDocument[] | null;
-}
- 
-function NodeWithToolbar({ data }) {
-  return (
-    <>
-      <NodeToolbar
-        isVisible={data.forceToolbarVisible || undefined}
-        position={data.toolbarPosition}
-        align={data.align}
-      >
-        <Button variant="contained">cut</Button>
-        <Button variant="contained">copy</Button>
-        <Button variant="contained">paste</Button>
-      </NodeToolbar>
-      {/* <Card variant="outlined" sx={{ padding: '4px', marginTop: '4px', backgroundColor: '#f5f5f5' }}>
-        {data?.label}
-      </Card> */}
-      <Chip label={data?.label} variant="outlined" />
-    </>
-  );
+  jsonldData: JsonLdDocument | JsonLdDocument[] | null;
 }
 
-const TextUpdaterNode = ({ data }) => {
+const TextUpdaterNode = ({ data }: { data: FlowNodeData }) => {
   return (
     <div className="text-updater-node">
       <NodeToolbar
@@ -57,7 +37,13 @@ const TextUpdaterNode = ({ data }) => {
         <Button variant="contained">Content</Button>
       </NodeToolbar>
       <Handle type="target" position={Position.Left} />
-      <div>{data.label}</div>
+      <Box sx={{
+        padding: '10px',
+        // border: '1px solid #ddd',
+        background: data.known ? '#d4edda' : '#fff',
+        borderRadius: '3px',
+      }}
+      >{data.label}</Box>
       <Handle type="source" position={Position.Right} />
     </div>
   );
@@ -66,10 +52,10 @@ const TextUpdaterNode = ({ data }) => {
 const nodeTypes = {
   'node-with-toolbar': TextUpdaterNode,
 };
- 
+
 export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFlowProps>) {
-    const [nodes, setNodes] = useState<Node<FlowNodeData>[]>([]);
-    const [edges, setEdges] = useState<Edge[]>([]);
+  const [nodes, setNodes] = useState<Node<FlowNodeData>[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
 
   useEffect(() => {
     if (!jsonldData) {
@@ -81,7 +67,7 @@ export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFl
     setNodes(nodes);
     setEdges(edges);
   }, [jsonldData]);
- 
+
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds) as Node<FlowNodeData>[]),
     [setNodes],
@@ -94,19 +80,19 @@ export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFl
     (connection) => setEdges((eds) => addEdge(connection, eds)),
     [setEdges],
   );
- 
+
   return (
     <Box sx={{ width: '100%', height: '50vh', border: '1px solid #ccc', borderRadius: '4px' }}>
-        <GlobalStyles
-            styles={{
-            '.text-updater-node': {
-                padding: '10px',
-                border: '1px solid #ddd',
-                background: '#fff',
-                borderRadius: '3px',
-            },
-            }}
-        />
+      <GlobalStyles
+        styles={{
+          '.text-updater-node': {
+            padding: '10px',
+            border: '1px solid #ddd',
+            background: '#fff',
+            borderRadius: '3px',
+          },
+        }}
+      />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -116,9 +102,9 @@ export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFl
         onConnect={onConnect}
         fitView
       >
-            <Background />
-            <Controls />
-        </ReactFlow>
+        <Background />
+        <Controls />
+      </ReactFlow>
     </Box>
   );
 }

@@ -1,11 +1,6 @@
 import type { Node, Edge } from "@xyflow/react";
 import type { JsonLdDocument } from "jsonld";
-
-export interface FlowNodeData extends Record<string, unknown> {
-  label: string;
-  originalId?: string;
-  type?: string;
-}
+import type { FlowNodeData } from "../types";
 
 // Utility to get a safe local id from a full uri
 const getLocalId = (uri: string): string => {
@@ -51,8 +46,26 @@ export function jsonldToFlow(
 
   const nodeMeta = new Map<
     string,
-    { id: string; label: string; type?: string; prerequisites: string[] }
+    { id: string; label: string; type?: string; prerequisites: string[]; known?: boolean }
   >();
+
+  // Collect known concepts from any user 'knows' fields before building node meta
+  const knownSet = new Set<string>();
+  for (const item of jsonld) {
+    if (!item) continue;
+    const knows = item["http://learnora.ai/ont#knows"] ?? item["knows"];
+    if (!knows) continue;
+    const arr = Array.isArray(knows) ? knows : [knows];
+    for (const k of arr) {
+      if (!k) continue;
+      if (typeof k === "string") {
+        knownSet.add(getLocalId(k));
+      } else if (typeof k === "object" && (k as Record<string, unknown>)["@id"]) {
+        const idVal = (k as Record<string, unknown>)["@id"];
+        if (typeof idVal === "string") knownSet.add(getLocalId(idVal));
+      }
+    }
+  }
 
   const getPrereqArray = (item: Record<string, unknown>): unknown[] => {
     if (Array.isArray(item["http://learnora.ai/ont#hasPrerequisite"]))
@@ -94,7 +107,9 @@ export function jsonldToFlow(
       const label = findLabel(item);
       const prerequisites = parsePrereqs(item);
 
-      nodeMeta.set(localId, { id: localId, label, type, prerequisites });
+      const known = knownSet.has(localId);
+
+      nodeMeta.set(localId, { id: localId, label, type, prerequisites, known });
     }
   };
 
@@ -155,7 +170,7 @@ export function jsonldToFlow(
       nodes.push({
         id: id,
         position: { x, y },
-        data: { label: meta?.label, originalId: meta?.id, type: meta?.type },
+        data: { label: meta?.label, originalId: meta?.id, type: meta?.type, known: meta?.known },
         type: "node-with-toolbar",
       });
       index += 1;

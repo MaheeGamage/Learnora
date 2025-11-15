@@ -209,7 +209,8 @@ class LearningPathService:
         # Optionally include users who follow this path
         if include_users:
             user_uri = self.kg_base.ONT[normalize_string(f"user_{user.id}")]
-
+            for user_s, user_p, user_o in user_graph.triples((user_uri, self.kg_base.RDF.type, None)):
+                result_graph.add((user_s, user_p, user_o))
             for user_s, user_p, user_o in user_graph.triples((None, self.kg_base.ONT.followsPath, learning_path_uri)):
                 result_graph.add((user_s, user_p, user_o))
             for user_s, user_p, user_o in user_graph.triples((user_uri, self.kg_base.ONT.knows, None)):

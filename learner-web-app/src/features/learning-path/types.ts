@@ -44,3 +44,10 @@ export type TestParseRequest = {
   topic: string;
   concepts: Concept[];
 };
+
+export interface FlowNodeData extends Record<string, unknown> {
+  label: string;
+  originalId?: string;
+  type?: string;
+  known?: boolean;
+}
