@@ -1,4 +1,4 @@
-import type { Node, Edge } from "@xyflow/react";
+import { type Node, type Edge, MarkerType } from "@xyflow/react";
 import type { JsonLdDocument } from "jsonld";
 import type { FlowNodeData } from "../types";
 
@@ -46,7 +46,7 @@ export function jsonldToFlow(
 
   const nodeMeta = new Map<
     string,
-    { id: string; label: string; type?: string; prerequisites: string[]; known?: boolean }
+    { id: string; label: string; type?: string; prerequisites: string[]; known?: boolean; status?: 'known' | 'ready' | 'locked' }
   >();
 
   // Collect known concepts from any user 'knows' fields before building node meta
@@ -66,6 +66,7 @@ export function jsonldToFlow(
       }
     }
   }
+  console.log("Known concepts:", Array.from(knownSet));
 
   const getPrereqArray = (item: Record<string, unknown>): unknown[] => {
     if (Array.isArray(item["http://learnora.ai/ont#hasPrerequisite"]))
@@ -85,6 +86,18 @@ export function jsonldToFlow(
     return undefined;
   };
 
+  const isConceptOrGoal = (item: Record<string, unknown>): boolean => {
+    const t = item["@type"];
+    if (!t) return false;
+    
+    const types = Array.isArray(t) ? t : [t];
+    return types.some(type => {
+      if (typeof type !== "string") return false;
+      const localType = getLocalId(type);
+      return localType === "Concept" || localType === "Goal";
+    });
+  };
+
   const parsePrereqs = (item: Record<string, unknown>): string[] => {
     const prereqArray = getPrereqArray(item);
     const prerequisites: string[] = [];
@@ -100,6 +113,10 @@ export function jsonldToFlow(
   const collectNodeMeta = (items: Array<Record<string, unknown>>) => {
     for (const item of items) {
       if (!item) continue;
+      
+      // Only process Concept and Goal types
+      if (!isConceptOrGoal(item)) continue;
+      
       const idRaw = item["@id"];
       if (typeof idRaw !== "string") continue;
       const localId = getLocalId(idRaw);
@@ -114,6 +131,28 @@ export function jsonldToFlow(
   };
 
   collectNodeMeta(jsonld);
+
+  // Determine learning status for each node
+  const determineStatus = (nodeId: string): 'known' | 'ready' | 'locked' => {
+    const meta = nodeMeta.get(nodeId);
+    if (!meta) return 'locked';
+    
+    // If user already knows this concept
+    if (knownSet.has(nodeId)) return 'known';
+    
+    // If no prerequisites, it's ready to learn
+    if (!meta.prerequisites || meta.prerequisites.length === 0) return 'ready';
+    
+    // Check if all prerequisites are known
+    const allPrereqsKnown = meta.prerequisites.every(prereqId => knownSet.has(prereqId));
+    
+    return allPrereqsKnown ? 'ready' : 'locked';
+  };
+
+  // Apply status to all nodes
+  for (const [nodeId, meta] of nodeMeta) {
+    meta.status = determineStatus(nodeId);
+  }
 
   // Calculate levels (simple DFS)
   const levels = new Map<string, number>();
@@ -170,8 +209,14 @@ export function jsonldToFlow(
       nodes.push({
         id: id,
         position: { x, y },
-        data: { label: meta?.label, originalId: meta?.id, type: meta?.type, known: meta?.known },
-        type: "node-with-toolbar",
+        data: { 
+          label: meta?.label, 
+          originalId: meta?.id, 
+          type: meta?.type, 
+          known: meta?.known,
+          status: meta?.status
+        },
+        type: "concept-node",
       });
       index += 1;
     }
@@ -188,7 +233,7 @@ export function jsonldToFlow(
       const edgeId = `${source}-${target}`;
       if (!edgeSet.has(edgeId)) {
         edgeSet.add(edgeId);
-        edges.push({ id: edgeId, source, target });
+        edges.push({ id: edgeId, source, target, markerEnd: { type: MarkerType.ArrowClosed } });
       }
     }
   }

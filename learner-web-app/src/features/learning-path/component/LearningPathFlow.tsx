@@ -9,48 +9,24 @@ import {
   type OnConnect,
   type OnNodesChange,
   type OnEdgesChange,
-  NodeToolbar,
-  Handle,
-  Position,
   Background,
   Controls,
 
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { jsonldToFlow, type FlowNodeData } from '../utils/jsonldToFlow';
+import { jsonldToFlow } from '../utils/jsonldToFlow';
+import type { FlowNodeData } from '../types';
 import type { JsonLdDocument } from 'jsonld';
-import { Box, Button, Card, Chip, GlobalStyles } from '@mui/material';
+import { Box } from '@mui/material';
+import ConceptNode from './reactFlow/ConceptNode';
+import BiDirectionalNode from './reactFlow/BiDirectionalNode';
 
 interface LearningPathFlowProps {
   jsonldData: JsonLdDocument | JsonLdDocument[] | null;
 }
 
-const TextUpdaterNode = ({ data }: { data: FlowNodeData }) => {
-  return (
-    <div className="text-updater-node">
-      <NodeToolbar
-        isVisible={data.forceToolbarVisible || undefined}
-        position={data.toolbarPosition}
-        align={data.align}
-      >
-        <Button variant="contained">Evaluate</Button>
-        <Button variant="contained">Content</Button>
-      </NodeToolbar>
-      <Handle type="target" position={Position.Left} />
-      <Box sx={{
-        padding: '10px',
-        // border: '1px solid #ddd',
-        background: data.known ? '#d4edda' : '#fff',
-        borderRadius: '3px',
-      }}
-      >{data.label}</Box>
-      <Handle type="source" position={Position.Right} />
-    </div>
-  );
-};
-
 const nodeTypes = {
-  'node-with-toolbar': TextUpdaterNode,
+  'concept-node': ConceptNode
 };
 
 export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFlowProps>) {
@@ -82,17 +58,8 @@ export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFl
   );
 
   return (
-    <Box sx={{ width: '100%', height: '50vh', border: '1px solid #ccc', borderRadius: '4px' }}>
-      <GlobalStyles
-        styles={{
-          '.text-updater-node': {
-            padding: '10px',
-            border: '1px solid #ddd',
-            background: '#fff',
-            borderRadius: '3px',
-          },
-        }}
-      />
+    <Box sx={{ width: '100%', height: '50vh', border: '1px solid #ccc', borderRadius: '4px', position: 'relative' }}>
+      {/* Legend */}
       <ReactFlow
         nodes={nodes}
         edges={edges}

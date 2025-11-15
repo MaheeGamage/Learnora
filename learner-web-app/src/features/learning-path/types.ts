@@ -50,4 +50,5 @@ export interface FlowNodeData extends Record<string, unknown> {
   originalId?: string;
   type?: string;
   known?: boolean;
+  status?: 'known' | 'ready' | 'locked';
 }
