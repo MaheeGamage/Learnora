@@ -19,7 +19,6 @@ import type { FlowNodeData } from '../types';
 import type { JsonLdDocument } from 'jsonld';
 import { Box } from '@mui/material';
 import ConceptNode from './reactFlow/ConceptNode';
-import BiDirectionalNode from './reactFlow/BiDirectionalNode';
 
 interface LearningPathFlowProps {
   jsonldData: JsonLdDocument | JsonLdDocument[] | null;
