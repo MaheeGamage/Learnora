@@ -14,12 +14,16 @@ import {
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { useGenerateMCQ } from "../../agent/queries";
+import { useUpdateLearningPath } from "../../learning-path/queries";
 import type { MCQQuestion } from "../../agent/types";
+import { buildUserKnowsConceptTriple, hasPassedEvaluation } from "../utils/kgUpdateHelper";
 
 interface MCQEvaluationProps {
     conceptName: string;
     conceptId: string;
     learningPathId: number;
+    userId: number;
+    learningPathKg?: Record<string, unknown>[] | null;
     onBack: () => void;
 }
 
@@ -27,6 +31,8 @@ const MCQEvaluation: React.FC<MCQEvaluationProps> = ({
     conceptName,
     conceptId,
     learningPathId,
+    userId,
+    learningPathKg,
     onBack,
 }) => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -34,8 +40,12 @@ const MCQEvaluation: React.FC<MCQEvaluationProps> = ({
     const [showExplanation, setShowExplanation] = useState(false);
     const [userAnswers, setUserAnswers] = useState<string[]>([]);
     const [showResults, setShowResults] = useState(false);
+    const [updateSuccess, setUpdateSuccess] = useState(false);
+    const [updateError, setUpdateError] = useState<string | null>(null);
+    const [isUpdatingKG, setIsUpdatingKG] = useState(false);
 
     const { mutate: generateMCQ, isPending, data, error } = useGenerateMCQ();
+    const { mutate: updateLearningPath } = useUpdateLearningPath(learningPathId);
 
     // Fetch questions on mount
     useEffect(() => {
@@ -47,6 +57,17 @@ const MCQEvaluation: React.FC<MCQEvaluationProps> = ({
             learning_path_db_id: learningPathId,
         });
     }, [generateMCQ, conceptName, conceptId, learningPathId]);
+
+    // Auto-update knowledge graph when user passes
+    useEffect(() => {
+        if (showResults && !updateSuccess && !isUpdatingKG && !updateError) {
+            const score = calculateScore();
+            if (hasPassedEvaluation(score)) {
+                handleUpdateKnowledgeGraph();
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showResults]);
 
     const questions: MCQQuestion[] = data?.questions || [];
     const currentQuestion = questions[currentQuestionIndex];
@@ -81,6 +102,40 @@ const MCQEvaluation: React.FC<MCQEvaluationProps> = ({
             (answer, index) => answer === questions[index]?.correct_answer
         ).length;
         return Math.round((correct / questions.length) * 100);
+    };
+
+    const handleUpdateKnowledgeGraph = async () => {
+        setIsUpdatingKG(true);
+        setUpdateError(null);
+
+        try {
+            const userKnowsTriple = buildUserKnowsConceptTriple(userId, conceptId);
+            
+            // Merge existing KG data with user triplet
+            const updatedKgData = learningPathKg 
+                ? [...learningPathKg, userKnowsTriple]
+                : [userKnowsTriple];
+            
+            updateLearningPath(
+                { kg_data: updatedKgData },
+                {
+                    onSuccess: () => {
+                        setUpdateSuccess(true);
+                    },
+                    onError: (err) => {
+                        setUpdateError(
+                            err instanceof Error ? err.message : "Failed to update knowledge graph"
+                        );
+                    },
+                    onSettled: () => {
+                        setIsUpdatingKG(false);
+                    },
+                }
+            );
+        } catch (err) {
+            setUpdateError(err instanceof Error ? err.message : "An error occurred");
+            setIsUpdatingKG(false);
+        }
     };
 
     // Loading state
@@ -124,6 +179,8 @@ const MCQEvaluation: React.FC<MCQEvaluationProps> = ({
     // Evaluation complete - show results
     if (showResults) {
         const score = calculateScore();
+        const passed = hasPassedEvaluation(score);
+
         return (
             <Paper elevation={2} sx={{ p: 4 }}>
                 <Stack spacing={3} alignItems="center">
@@ -136,6 +193,42 @@ const MCQEvaluation: React.FC<MCQEvaluationProps> = ({
                     <Typography variant="body1" color="text.secondary">
                         You answered {userAnswers.filter((ans, i) => ans === questions[i]?.correct_answer).length} out of {questions.length} questions correctly.
                     </Typography>
+
+                    {passed && !updateSuccess && !isUpdatingKG && (
+                        <Alert severity="info">
+                            Congratulations! You passed. We're updating your knowledge graph...
+                        </Alert>
+                    )}
+
+                    {updateSuccess && (
+                        <Alert severity="success">
+                            Success! Your knowledge graph has been updated. You now know {conceptName}!
+                        </Alert>
+                    )}
+
+                    {updateError && (
+                        <Alert severity="error">
+                            Error updating knowledge graph: {updateError}
+                        </Alert>
+                    )}
+
+                    {isUpdatingKG && (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <CircularProgress size={24} />
+                            <Typography variant="body2">Updating your profile...</Typography>
+                        </Stack>
+                    )}
+
+                    {passed && !updateSuccess && (
+                        <Button
+                            variant="contained"
+                            onClick={handleUpdateKnowledgeGraph}
+                            disabled={isUpdatingKG}
+                        >
+                            {isUpdatingKG ? "Updating..." : "Update My Knowledge Graph"}
+                        </Button>
+                    )}
+
                     <Button variant="contained" onClick={onBack}>
                         Back to Concept Selection
                     </Button>

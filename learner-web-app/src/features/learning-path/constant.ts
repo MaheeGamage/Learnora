@@ -71,4 +71,17 @@ export const GRAPH_CONFIG = {
     },
 } as const;
 
+/**
+ * MCQ Evaluation Configuration
+ */
+export const MCQ_CONFIG = {
+    // Minimum score percentage to update knowledge graph
+    PASSING_SCORE_THRESHOLD: 80,
+    
+    // Ontology predicates for KG updates
+    ONTOLOGY_PREDICATES: {
+        KNOWS: "http://learnora.ai/ont#knows",
+    },
+} as const;
+
 export type NodeType = typeof GRAPH_CONFIG.NODE_TYPES[keyof typeof GRAPH_CONFIG.NODE_TYPES];

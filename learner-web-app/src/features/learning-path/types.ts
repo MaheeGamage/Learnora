@@ -1,5 +1,7 @@
 export type Concept = Record<string, unknown>;
 
+export type JsonLdNode = Record<string, string | string[] | Record<string, unknown> | Record<string, unknown>[] | undefined>;
+
 export type LearningPathCreate = {
   topic: string;
   user_id: number;
@@ -9,6 +11,8 @@ export type LearningPathCreate = {
 export type LearningPathUpdate = {
   topic?: string | null;
   graph_uri?: string | null;
+  kg_data?: Array<Record<string, unknown>> | null;
+  goal?: string | null;
 };
 
 export type LearningPathResponse = {
