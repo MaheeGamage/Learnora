@@ -78,8 +78,8 @@ class LearningPathService:
                 user_graph = self.storage.load_user_graph(str(current_user.id))
                 # Serialize graph to JSON-LD format
                 lp_uri = URIRef(learning_path.graph_uri)
-                kg_jsonld = self.extract_learning_path_graph(user_graph, lp_uri) #learning_path.graph_uri
-                # kg_jsonld = self._graph_to_jsonld(user_graph)
+                kg_jsonld = self.extract_learning_path_graph(
+                    user_graph, lp_uri, user=current_user, include_users=True)  # learning_path.graph_uri
                 # Attach KG data to the response object
                 learning_path.kg_data = kg_jsonld
             except Exception as e:
@@ -114,10 +114,11 @@ class LearningPathService:
         if learning_path.user_id != current_user.id:
             raise HTTPException(
                 status_code=403, detail="Not authorized to update this learning path")
-        
+
         # Handle KG data update if provided
         if update_data.kg_data is not None:
-            self.update_learning_path_kg(learning_path, update_data.kg_data, current_user, update_data.goal)
+            self.update_learning_path_kg(
+                learning_path, update_data.kg_data, current_user, update_data.goal)
 
         return await crud.update_learning_path(db, learning_path_id, update_data)
 
@@ -161,7 +162,8 @@ class LearningPathService:
         self,
         user_graph: RDFGraph,
         learning_path_uri: URIRef,
-        include_users: bool = True,
+        user: User = None,
+        include_users: bool = False,
         include_goals: bool = True
     ) -> RDFGraph:
         """
@@ -206,7 +208,11 @@ class LearningPathService:
 
         # Optionally include users who follow this path
         if include_users:
+            user_uri = self.kg_base.ONT[normalize_string(f"user_{user.id}")]
+
             for user_s, user_p, user_o in user_graph.triples((None, self.kg_base.ONT.followsPath, learning_path_uri)):
+                result_graph.add((user_s, user_p, user_o))
+            for user_s, user_p, user_o in user_graph.triples((user_uri, self.kg_base.ONT.knows, None)):
                 result_graph.add((user_s, user_p, user_o))
 
         return json.loads(result_graph.serialize(format='json-ld', indent=4))
@@ -238,9 +244,10 @@ class LearningPathService:
         graph.add((learning_path_uri, self.kg_base.RDF.type,
                   self.kg_base.ONT.LearningPath))
         graph.add((learning_path_uri, self.kg_base.ONT.topic, Literal(topic)))
-        
+
         # Create and link Goal
-        goal_uri = self.kg_base.ONT[normalize_string(f"goal_{db_learning_path.id}")]
+        goal_uri = self.kg_base.ONT[normalize_string(
+            f"goal_{db_learning_path.id}")]
         graph.add((goal_uri, self.kg_base.RDF.type, self.kg_base.ONT.Goal))
         graph.add((goal_uri, self.kg_base.ONT.label, Literal(goal)))
         graph.add((learning_path_uri, self.kg_base.ONT.hasGoal, goal_uri))
@@ -319,71 +326,76 @@ class LearningPathService:
     ) -> Optional[LearningPath]:
         """
         Update a learning path's knowledge graph with JSON-LD data.
-        
+
         Args:
             db: Database session
             learning_path_id: ID of the learning path to update
             kg_jsonld: JSON-LD format data (array of objects)
             current_user: Current authenticated user
             goal: Optional goal to update
-            
+
         Returns:
             Updated LearningPath object with kg_data attached
         """
-        
+
         if not learning_path:
             return None
-        
+
         if learning_path.user_id != current_user.id:
             raise HTTPException(
                 status_code=403, detail="Not authorized to update this learning path")
-        
+
         try:
             # Load existing user graph
             user_graph = self.storage.load_user_graph(str(current_user.id))
-            
+
             # Get the learning path URI
             lp_uri = URIRef(learning_path.graph_uri)
-            
+
             # Clear existing learning path triples from the graph
             # Remove all triples related to this learning path
             triples_to_remove = list(user_graph.triples((lp_uri, None, None)))
             for triple in triples_to_remove:
                 user_graph.remove(triple)
-            
+
             # Also remove triples where this learning path is the object
             triples_to_remove = list(user_graph.triples((None, None, lp_uri)))
             for triple in triples_to_remove:
                 user_graph.remove(triple)
-            
+
             # Convert JSON-LD back to RDF graph and add to user graph
             new_graph = RDFGraph()
             new_graph.parse(data=json.dumps(kg_jsonld), format='json-ld')
-            
+
             # Add all triples from the new graph to user graph
             for s, p, o in new_graph:
                 user_graph.add((s, p, o))
-            
+
             # Update goal if provided
             if goal:
                 # Find and update the goal node
-                goal_nodes = list(user_graph.subjects(RDF.type, self.kg_base.ONT.Goal))
+                goal_nodes = list(user_graph.subjects(
+                    RDF.type, self.kg_base.ONT.Goal))
                 for goal_node in goal_nodes:
                     # Check if this goal belongs to the learning path
                     if (lp_uri, self.kg_base.ONT.hasGoal, goal_node) in user_graph:
-                        user_graph.remove((goal_node, self.kg_base.ONT.label, None))
-                        user_graph.add((goal_node, self.kg_base.ONT.label, Literal(goal)))
+                        user_graph.remove(
+                            (goal_node, self.kg_base.ONT.label, None))
+                        user_graph.add(
+                            (goal_node, self.kg_base.ONT.label, Literal(goal)))
                         break
-            
+
             # Save the updated graph (replace mode to avoid re-merging deleted triples)
-            self.storage.save_user_graph(str(current_user.id), user_graph, replace=True)
-            
+            self.storage.save_user_graph(
+                str(current_user.id), user_graph, replace=True)
+
             # Attach KG data to response
             learning_path.kg_data = kg_jsonld
-            
-            logger.info(f"Successfully updated learning path {learning_path.id} knowledge graph")
+
+            logger.info(
+                f"Successfully updated learning path {learning_path.id} knowledge graph")
             return learning_path
-            
+
         except Exception as e:
             logger.error(f"Error updating learning path KG: {str(e)}")
             raise HTTPException(
