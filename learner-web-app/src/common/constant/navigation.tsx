@@ -12,9 +12,8 @@ export const NAVIGATION: Navigation = [
     title: 'Home',
     icon: <HomeIcon />,
   },
-  // {
-  //   segment: 'orders',
-  //   title: 'Orders',
-  //   icon: <ShoppingCartIcon />,
-  // },
+  {
+    segment: 'evaluate',
+    title: 'Evaluate'
+  },
 ];

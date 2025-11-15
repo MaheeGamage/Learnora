@@ -4,18 +4,7 @@
  */
 
 import { useState } from "react";
-import {
-  Box,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  CircularProgress,
-  Alert,
-  Stack,
-  Typography,
-  Button,
-} from "@mui/material";
+import { Box, CircularProgress, Alert, Stack, Typography, Button } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 // import LearningPathVisualization from "./LearningPathVisualization";
 import { useLearningPaths, useLearningPath } from "../queries";
@@ -25,6 +14,7 @@ import { useChatContext } from "../../../hooks/useChatContext";
 import type { JsonLdDocument } from "jsonld";
 import type { LearningPathResponse } from "../types";
 import LearningPathFlow from "./LearningPathFlow";
+import LearningPathSelector from "./LearningPathSelector";
 
 interface LearningPathIntegrationProps {
   initialPathId?: number;
@@ -74,11 +64,6 @@ function renderContent(
         )}
       </Box>
       {selectedPath.kg_data ? (
-        // <LearningPathVisualization
-        //   jsonldData={selectedPath.kg_data as JsonLdDocument}
-        //   height="600px"
-        //   width="100%"
-        // />
         <LearningPathFlow jsonldData={selectedPath.kg_data as JsonLdDocument}/>
       ) : (
         <Alert severity="info">No knowledge graph data available for this learning path</Alert>
@@ -161,27 +146,11 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = ({
         </Button>
       </Box>
 
-      <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Select Learning Path</InputLabel>
-        <Select
-          value={selectedPathId || ""}
-          label="Select Learning Path"
-          onChange={(e) => setSelectedPathId(Number(e.target.value))}
-        >
-          {learningPaths.map((path) => (
-            <MenuItem key={path.id} value={path.id}>
-              <Box>
-                <Typography variant="body2" fontWeight="600">
-                  {path.topic}
-                </Typography>
-                <Typography variant="caption" display="block">
-                  ID: {path.id} • {new Date(path.created_at).toLocaleDateString()}
-                </Typography>
-              </Box>
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <LearningPathSelector
+        learningPaths={learningPaths}
+        selectedPathId={selectedPathId}
+        onChange={(id) => setSelectedPathId(id)}
+      />
 
       {renderContent(selectedPathId, selectedPath, isLoadingPath, pathError)}
     </Box>

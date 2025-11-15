@@ -7,9 +7,16 @@ from app.features.users.users import current_active_user
 from app.database import get_db
 from app.features.users.models import User
 from sqlalchemy.ext.asyncio import AsyncSession
+
+# Import MCQ router
+from app.features.agent.mcq_generator.router import router as mcq_router
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Include MCQ generation routes
+router.include_router(mcq_router)
 service = AgentService()
 
 
