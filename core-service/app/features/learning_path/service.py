@@ -114,6 +114,10 @@ class LearningPathService:
         if learning_path.user_id != current_user.id:
             raise HTTPException(
                 status_code=403, detail="Not authorized to update this learning path")
+        
+        # Handle KG data update if provided
+        if update_data.kg_data is not None:
+            self.update_learning_path_kg(learning_path, update_data.kg_data, current_user, update_data.goal)
 
         return await crud.update_learning_path(db, learning_path_id, update_data)
 
@@ -306,10 +310,9 @@ class LearningPathService:
 
         return updated_db_learning_path
 
-    async def update_learning_path_kg(
+    def update_learning_path_kg(
         self,
-        db: AsyncSession,
-        learning_path_id: int,
+        learning_path: LearningPath,
         kg_jsonld: List[Dict[str, Any]],
         current_user: User,
         goal: Optional[str] = None
@@ -327,8 +330,6 @@ class LearningPathService:
         Returns:
             Updated LearningPath object with kg_data attached
         """
-        # Get the learning path and verify authorization
-        learning_path = await crud.get_learning_path_by_id(db, learning_path_id)
         
         if not learning_path:
             return None
@@ -380,7 +381,7 @@ class LearningPathService:
             # Attach KG data to response
             learning_path.kg_data = kg_jsonld
             
-            logger.info(f"Successfully updated learning path {learning_path_id} knowledge graph")
+            logger.info(f"Successfully updated learning path {learning_path.id} knowledge graph")
             return learning_path
             
         except Exception as e:

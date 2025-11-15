@@ -151,11 +151,12 @@ export function jsonldToFlow(
       const meta = nodeMeta.get(id)!;
       const x = startX + level * xSpacing;
       const y = Math.round(startYForLevel + index * ySpacing);
+      if (!meta) continue;
       nodes.push({
         id: id,
         position: { x, y },
-        data: { label: meta.label, originalId: meta.id, type: meta.type },
-        type: 'node-with-toolbar',
+        data: { label: meta?.label, originalId: meta?.id, type: meta?.type },
+        type: "node-with-toolbar",
       });
       index += 1;
     }

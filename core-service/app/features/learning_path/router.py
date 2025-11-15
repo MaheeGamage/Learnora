@@ -5,7 +5,6 @@ from app.features.learning_path.schemas import (
     LearningPathCreate,
     LearningPathUpdate,
     LearningPathResponse,
-    LearningPathKGUpdate,
 )
 from app.features.learning_path.service import LearningPathService
 from typing import List
@@ -66,33 +65,17 @@ async def update_learning_path(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(current_active_user)
 ):
-    """Update a learning path."""
-    learning_path = await service.update_learning_path(db, learning_path_id, update_data, current_user)
-    if not learning_path:
-        raise HTTPException(status_code=404, detail=LEARNING_PATH_NOT_FOUND)
-    return learning_path
-
-
-@router.put("/{learning_path_id}/kg", response_model=LearningPathResponse)
-async def update_learning_path_kg(
-    learning_path_id: int,
-    kg_update: LearningPathKGUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(current_active_user)
-):
-    """Update a learning path's knowledge graph with JSON-LD data.
+    """Update a learning path.
     
-    Request Body:
-        kg_data: JSON-LD format array of objects representing the knowledge graph
-        goal: Optional goal description to update
+    You can update:
+    - topic: Learning path topic/title
+    - graph_uri: Graph URI reference
+    - kg_data: Knowledge graph data in JSON-LD format (triggers RDF update)
+    - goal: Learning path goal (used with kg_data)
+    
+    Note: When kg_data is provided, the knowledge graph will be updated in RDF storage.
     """
-    learning_path = await service.update_learning_path_kg(
-        db, 
-        learning_path_id, 
-        kg_update.kg_data,
-        current_user,
-        kg_update.goal
-    )
+    learning_path = await service.update_learning_path(db, learning_path_id, update_data, current_user)
     if not learning_path:
         raise HTTPException(status_code=404, detail=LEARNING_PATH_NOT_FOUND)
     return learning_path

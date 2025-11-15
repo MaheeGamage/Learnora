@@ -39,7 +39,7 @@ const EvaluateIntegrator: React.FC<EvaluateIntegratorProps> = ({ initialPathId }
         pathError: Error | null
     ) => {
         if (selectedPathId === null) {
-            return <Alert severity="info">Select a learning path to visualize</Alert>;
+            return <Alert severity="info">Select a learning path to evaluate</Alert>;
         }
 
         if (isLoadingPath) {
@@ -117,16 +117,6 @@ const EvaluateIntegrator: React.FC<EvaluateIntegratorProps> = ({ initialPathId }
                 }}
             />
 
-            {/* {isEvaluating && selectedConcept && selectedPathId ? (
-                <MCQEvaluation
-                    conceptName={selectedConcept.label}
-                    conceptId={selectedConcept.id}
-                    learningPathId={selectedPathId}
-                    onBack={() => setIsEvaluating(false)}
-                />
-            ) : (
-                renderContent(selectedPathId, selectedPath, isLoadingPath, pathError)
-            )} */}
             {renderContent(selectedPathId, selectedPath, isLoadingPath, pathError)}
         </Box>
     );
