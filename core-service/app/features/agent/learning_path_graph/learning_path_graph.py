@@ -30,6 +30,8 @@ basic_prompt_template = ChatPromptTemplate.from_messages(
     ]
 )
 
+MAX_FOLLOW_UPS = 1
+
 def basic_call_model(state: IntentionState):
     prompt = basic_prompt_template.invoke(state)
     response = model.invoke(prompt)
@@ -140,7 +142,7 @@ def route_after_evaluation(state: IntentionState) -> Literal["format_output", "a
     
     Routes to:
     - "format_output": If intention is clear OR max follow-ups reached
-    - "ask_followup": If intention unclear AND follow-ups < 3
+    - "ask_followup": If intention unclear AND follow-ups < MAX_FOLLOW_UPS
     
     Args:
         state: Current IntentionState
@@ -157,12 +159,12 @@ def route_after_evaluation(state: IntentionState) -> Literal["format_output", "a
         return "format_output"
     
     # If reached max follow-ups, force proceed to output
-    if follow_up_count >= 3:
-        print("⚠️  Max follow-ups reached (3/3) → Forcing output")
+    if follow_up_count >= MAX_FOLLOW_UPS:
+        print("⚠️  Max follow-ups reached (MAX_FOLLOW_UPS/MAX_FOLLOW_UPS) → Forcing output")
         return "format_output"
     
     # Otherwise, ask follow-up question
-    print(f"❓ Intention unclear → Asking follow-up ({follow_up_count + 1}/3)")
+    print(f"❓ Intention unclear → Asking follow-up ({follow_up_count + 1}/MAX_FOLLOW_UPS)")
     return "ask_followup"
 
 ###############################
@@ -194,7 +196,7 @@ def followup_generator(state: IntentionState) -> dict:
     # Increment follow-up counter
     new_count = state.get("follow_up_count", 0) + 1
     
-    print(f"❓ Follow-up {new_count}/3: Asking clarifying question")
+    print(f"❓ Follow-up {new_count}/MAX_FOLLOW_UPS: Asking clarifying question")
     
     return {
         "messages": [response],

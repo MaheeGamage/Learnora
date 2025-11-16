@@ -109,13 +109,9 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = () => {
     );
   }
 
-  if (!learningPaths || learningPaths.length === 0) {
-    return <Alert severity="info">No learning paths available</Alert>;
-  }
-
   return (
     <Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="h6">Learning Paths</Typography>
         <Button
           variant="contained"
@@ -126,8 +122,13 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = () => {
         </Button>
       </Box>
 
-
-      {renderContent(activeLearningPath?.id || null, activeLearningPath, !!isLoadingPaths, pathsError || null)}
+      {!learningPaths || learningPaths.length === 0 ? (
+        <Alert severity="info">No learning paths available</Alert>
+      ) : (
+        <>
+          {renderContent(activeLearningPath?.id || null, activeLearningPath, !!isLoadingPaths, pathsError || null)}
+        </>
+      )}
     </Box>
   );
 };

@@ -1,6 +1,6 @@
 import LinearProgress from '@mui/material/LinearProgress';
 import { Outlet, Navigate, useLocation } from 'react-router';
-import { DashboardLayout, DashboardSidebarPageItem } from '@toolpad/core/DashboardLayout';
+import { DashboardLayout, DashboardSidebarPageItem, ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 import { PageContainer } from '@toolpad/core/PageContainer';
 import { useSession } from '../../common/hooks/useSession';
 import { Stack, IconButton, ListItem } from '@mui/material';
@@ -17,7 +17,7 @@ import { useLearningPathContext } from '../../hooks/useLearningPathContext';
 function CustomActions() {
   return (
     <Stack direction="row" alignItems="center">
-      {/* <ThemeSwitcher /> */}
+      <ThemeSwitcher />
       <ToolbarAccountOverride />
     </Stack>
   );
