@@ -1,8 +1,8 @@
 import LearningPathIntegration from '../features/learning-path/component/LearningPathIntegration';
 
 
-export default function DashboardPage() {
+export default function LearningPathPage() {
   return (
-    <h1>Welcome to the Home Page</h1>
+    <LearningPathIntegration />
   )
 }

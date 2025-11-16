@@ -4,7 +4,8 @@ export default [
   layout("./common/layouts/dashboard.tsx", [
     route("/", "./pages/home.tsx"),
     route("/evaluate", "./pages/evaluate.tsx"),
-    route("/orders", "./pages/orders.tsx"),
+    route("/learning-path", "./pages/LearningPath.tsx"),
+    route("/content", "./pages/content.tsx"),
   ]),
 
   // Authentication

@@ -1,50 +1,38 @@
-import { Box, Typography, Button, Alert, CircularProgress, Stack, Autocomplete, TextField } from "@mui/material";
+import { Box, Button, Alert, CircularProgress, Stack, Autocomplete, TextField } from "@mui/material";
 import React, { useState } from "react";
-import LearningPathSelector from "../../learning-path/component/LearningPathSelector";
-import { useLearningPaths, useLearningPath } from "../../learning-path/queries";
 import type { LearningPathResponse } from "../../learning-path/types";
 import { extractConcepts } from "../../../common/util/jsonldUtil";
 import { useSession } from "../../../common/hooks/useSession";
 import MCQEvaluation from "./MCQEvaluation";
+import { useLearningPathContext } from "../../../hooks/useLearningPathContext";
 
 interface EvaluateIntegratorProps {
     initialPathId?: number;
 }
 
-const EvaluateIntegrator: React.FC<EvaluateIntegratorProps> = ({ initialPathId }) => {
-    const [selectedPathId, setSelectedPathId] = useState<number | null>(
-        initialPathId || null
-    );
-
+const EvaluateIntegrator: React.FC<EvaluateIntegratorProps> = () => {
     const [selectedConcept, setSelectedConcept] = useState<{ id: string; label: string } | null>(null);
     const [isEvaluating, setIsEvaluating] = useState(false);
 
     const { session } = useSession();
     const userId = session?.user.id ? Number.parseInt(session.user.id, 10) : null;
+    const { learningPaths, activeLearningPath, isLoading: isLoadingPaths, error: pathsError } = useLearningPathContext();
 
-    const {
-        data: learningPaths,
-    } = useLearningPaths(0, 100);
 
-    const {
-        data: selectedPath,
-        isLoading: isLoadingPath,
-        error: pathError,
-    } = useLearningPath(selectedPathId, true);
 
     if (!learningPaths || learningPaths.length === 0) {
         return <Alert severity="info">No learning paths available</Alert>;
     }
 
     const renderEvaluationUI = () => {
-        if (isEvaluating && selectedConcept && selectedPathId && userId) {
+        if (isEvaluating && selectedConcept && activeLearningPath?.id && userId) {
             return (
                 <MCQEvaluation
                     conceptName={selectedConcept.label}
                     conceptId={selectedConcept.id}
-                    learningPathId={selectedPathId}
+                    learningPathId={activeLearningPath.id}
                     userId={userId}
-                    learningPathKg={selectedPath?.kg_data as Record<string, unknown>[] | null}
+                    learningPathKg={activeLearningPath?.kg_data as Record<string, unknown>[] | null}
                     onBack={() => setIsEvaluating(false)}
                 />
             );
@@ -99,7 +87,7 @@ const EvaluateIntegrator: React.FC<EvaluateIntegratorProps> = ({ initialPathId }
             return null;
         }
 
-        const concepts = extractConcepts((selectedPath as any)?.kg_data);
+        const concepts = extractConcepts((selectedPath as LearningPathResponse)?.kg_data);
 
         return (
             <Stack spacing={2}>
@@ -125,22 +113,7 @@ const EvaluateIntegrator: React.FC<EvaluateIntegratorProps> = ({ initialPathId }
 
     return (
         <Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="h6">Learning Paths</Typography>
-            </Box>
-
-            <LearningPathSelector
-                learningPaths={learningPaths}
-                selectedPathId={selectedPathId}
-                onChange={(id) => {
-                    if (!isEvaluating) {
-                        setSelectedPathId(id);
-                        setSelectedConcept(null);
-                    }
-                }}
-            />
-
-            {renderContent(selectedPathId, selectedPath, isLoadingPath, pathError)}
+            {renderContent(activeLearningPath?.id || null, activeLearningPath, !!isLoadingPaths, pathsError || null)}
         </Box>
     );
 };

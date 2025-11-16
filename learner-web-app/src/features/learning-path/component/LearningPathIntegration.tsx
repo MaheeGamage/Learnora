@@ -3,18 +3,13 @@
  * Allows users to select a learning path from a dropdown and visualize it
  */
 
-import { useState } from "react";
 import { Box, CircularProgress, Alert, Stack, Typography, Button } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-// import LearningPathVisualization from "./LearningPathVisualization";
-import { useLearningPaths, useLearningPath } from "../queries";
 import { useStartChat } from "../../agent/queries";
 import { AgentMode } from "../../agent/types";
 import { useChatContext } from "../../../hooks/useChatContext";
 import type { JsonLdDocument } from "jsonld";
 import type { LearningPathResponse } from "../types";
 import LearningPathFlow from "./LearningPathFlow";
-import LearningPathSelector from "./LearningPathSelector";
 import { useLearningPathContext } from "../../../hooks/useLearningPathContext";
 
 interface LearningPathIntegrationProps {
@@ -73,27 +68,10 @@ function renderContent(
   );
 }
 
-const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = ({
-  initialPathId,
-}) => {
-  // const [selectedPathId, setSelectedPathId] = useState<number | null>(
-  //   initialPathId || null
-  // );
+const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = () => {
   const { clearActiveThread, setActiveThreadId } = useChatContext();
   const startChatMutation = useStartChat();
-  const { learningPaths, activeLearningPath, setActiveLearningPath, isLoading: isLoadingPaths, error: pathsError } = useLearningPathContext();
-
-  // const {
-  //   data: learningPaths,
-  //   isLoading: isLoadingPaths,
-  //   error: pathsError,
-  // } = useLearningPaths(0, 100);
-
-  // const {
-  //   data: selectedPath,
-  //   isLoading: isLoadingPath,
-  //   error: pathError,
-  // } = useLearningPath(selectedPathId, true);
+  const { learningPaths, activeLearningPath, isLoading: isLoadingPaths, error: pathsError } = useLearningPathContext();
 
   const handleCreateNewPath = () => {
     // Clear any existing thread to start fresh
@@ -137,22 +115,17 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = ({
 
   return (
     <Box>
-      {/* <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="h6">Learning Paths</Typography>
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
+          // startIcon={<AddIcon />}
           onClick={handleCreateNewPath}
         >
           Create New Path
         </Button>
-      </Box> */}
+      </Box>
 
-      {/* <LearningPathSelector
-        learningPaths={learningPaths}
-        selectedPathId={selectedPathId}
-        onChange={(id) => setSelectedPathId(id)}
-      /> */}
 
       {renderContent(activeLearningPath?.id || null, activeLearningPath, !!isLoadingPaths, pathsError || null)}
     </Box>

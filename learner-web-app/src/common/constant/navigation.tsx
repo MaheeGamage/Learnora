@@ -15,7 +15,15 @@ export const NAVIGATION: Navigation = [
     icon: <HomeIcon />,
   },
   {
+    segment: 'learning-path',
+    title: 'Learning Path'
+  },
+  {
+    segment: 'content',
+    title: 'Content'
+  },
+  {
     segment: 'evaluate',
     title: 'Evaluate'
-  }
+  },
 ];
