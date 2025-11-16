@@ -6,6 +6,7 @@ import SessionContext, { type Session } from '../../contexts/SessionContext';
 import { ChatProvider } from '../../contexts/ChatContext';
 import { signOut, getCurrentSession } from '../../features/auth/authService';
 import { NAVIGATION } from '../constant/navigation';
+import { LearningPathContextProvider } from '../../contexts/LearningPathContextProvider';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -57,16 +58,18 @@ export default function AppProviderWrapper({ children }: Readonly<{ children: Re
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ReactRouterAppProvider 
-        navigation={NAVIGATION} 
+      <ReactRouterAppProvider
+        navigation={NAVIGATION}
         branding={BRANDING}
         session={session}
         authentication={AUTHENTICATION}
       >
         <SessionContext.Provider value={sessionContextValue}>
+          <LearningPathContextProvider>
             <ChatProvider>
-            {children}
+              {children}
             </ChatProvider>
+          </LearningPathContextProvider>
         </SessionContext.Provider>
       </ReactRouterAppProvider>
     </QueryClientProvider>
