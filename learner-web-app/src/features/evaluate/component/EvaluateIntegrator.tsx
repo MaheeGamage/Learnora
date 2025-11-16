@@ -1,5 +1,6 @@
 import { Box, Button, Alert, CircularProgress, Stack, Autocomplete, TextField } from "@mui/material";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useParams } from "react-router";
 import type { LearningPathResponse } from "../../learning-path/types";
 import { extractConcepts } from "../../../common/util/jsonldUtil";
 import { useSession } from "../../../common/hooks/useSession";
@@ -13,12 +14,42 @@ interface EvaluateIntegratorProps {
 const EvaluateIntegrator: React.FC<EvaluateIntegratorProps> = () => {
     const [selectedConcept, setSelectedConcept] = useState<{ id: string; label: string } | null>(null);
     const [isEvaluating, setIsEvaluating] = useState(false);
+    const [searchParams] = useSearchParams();
+    const { learningPathId } = useParams<{ learningPathId: string }>();
 
     const { session } = useSession();
     const userId = session?.user.id ? Number.parseInt(session.user.id, 10) : null;
-    const { learningPaths, activeLearningPath, isLoading: isLoadingPaths, error: pathsError } = useLearningPathContext();
+    const { learningPaths, activeLearningPath, setActiveLearningPath, isLoading: isLoadingPaths, error: pathsError } = useLearningPathContext();
 
+    // Set active learning path based on URL parameter
+    useEffect(() => {
+        if (learningPathId) {
+            const pathId = Number.parseInt(learningPathId, 10);
+            if (!Number.isNaN(pathId) && pathId !== activeLearningPath?.id) {
+                setActiveLearningPath(pathId);
+            }
+        }
+    }, [learningPathId, activeLearningPath?.id, setActiveLearningPath]);
 
+    // Pre-select concept based on URL parameter
+    useEffect(() => {
+        const conceptIdParam = searchParams.get('conceptId');
+        
+        if (conceptIdParam && activeLearningPath?.kg_data) {
+            // Decode the URL-encoded concept ID
+            const decodedConceptId = decodeURIComponent(conceptIdParam);
+            
+            // Extract concepts from the active learning path
+            const concepts = extractConcepts(activeLearningPath.kg_data);
+            
+            // Find the concept matching the ID from URL
+            const conceptToSelect = concepts.find(c => c.id === decodedConceptId);
+            
+            if (conceptToSelect) {
+                setSelectedConcept(conceptToSelect);
+            }
+        }
+    }, [searchParams, activeLearningPath]);
 
     if (!learningPaths || learningPaths.length === 0) {
         return <Alert severity="info">No learning paths available</Alert>;
@@ -63,8 +94,25 @@ const EvaluateIntegrator: React.FC<EvaluateIntegratorProps> = () => {
         isLoadingPath: boolean,
         pathError: Error | null
     ) => {
+        // Check if URL param doesn't match active learning path
+        if (learningPathId) {
+            const urlPathId = Number.parseInt(learningPathId, 10);
+            if (!Number.isNaN(urlPathId) && activeLearningPath?.id && urlPathId !== activeLearningPath.id) {
+                return (
+                    <Alert severity="warning">
+                        The learning path in the URL (ID: {urlPathId}) doesn't match the active learning path (ID: {activeLearningPath.id}). 
+                        Please change the learning path from the side menu.
+                    </Alert>
+                );
+            }
+        }
+
         if (selectedPathId === null) {
-            return <Alert severity="info">Select a learning path to evaluate</Alert>;
+            return (
+                <Alert severity="info">
+                    Please select a learning path from the side menu to evaluate concepts.
+                </Alert>
+            );
         }
 
         if (isLoadingPath) {

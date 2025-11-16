@@ -46,7 +46,7 @@ export function jsonldToFlow(
 
   const nodeMeta = new Map<
     string,
-    { id: string; label: string; type?: string; prerequisites: string[]; known?: boolean; status?: 'known' | 'ready' | 'locked' }
+    { id: string; idRaw:string; label: string; type?: string; prerequisites: string[]; known?: boolean; status?: 'known' | 'ready' | 'locked' }
   >();
 
   // Collect known concepts from any user 'knows' fields before building node meta
@@ -66,7 +66,6 @@ export function jsonldToFlow(
       }
     }
   }
-  console.log("Known concepts:", Array.from(knownSet));
 
   const getPrereqArray = (item: Record<string, unknown>): unknown[] => {
     if (Array.isArray(item["http://learnora.ai/ont#hasPrerequisite"]))
@@ -126,7 +125,7 @@ export function jsonldToFlow(
 
       const known = knownSet.has(localId);
 
-      nodeMeta.set(localId, { id: localId, label, type, prerequisites, known });
+      nodeMeta.set(localId, { id: localId, idRaw, label, type, prerequisites, known });
     }
   };
 
@@ -214,7 +213,8 @@ export function jsonldToFlow(
           originalId: meta?.id, 
           type: meta?.type, 
           known: meta?.known,
-          status: meta?.status
+          status: meta?.status,
+          concept: { id: meta.idRaw, label: meta.label }
         },
         type: "concept-node",
       });

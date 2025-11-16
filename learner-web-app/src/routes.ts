@@ -3,7 +3,7 @@ import { type RouteConfig, layout, route } from "@react-router/dev/routes";
 export default [
   layout("./common/layouts/dashboard.tsx", [
     route("/", "./pages/home.tsx"),
-    route("/evaluate", "./pages/evaluate.tsx"),
+    route("/evaluate/:learningPathId?", "./pages/evaluate.tsx"),
     route("/learning-path", "./pages/LearningPath.tsx"),
     route("/content", "./pages/content.tsx"),
   ]),

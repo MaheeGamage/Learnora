@@ -1,6 +1,9 @@
 import { Handle, Position, NodeToolbar } from '@xyflow/react';
 import { Box, Typography, Button } from '@mui/material';
+import { useNavigate } from 'react-router';
 import type { FlowNodeData } from '../../types';
+import { useLearningPathContext } from '../../../../hooks/useLearningPathContext';
+import { generateEvaluateUrl } from '../../../evaluate/utils/urlUtils';
 
 interface ConceptNodeProps {
   data: FlowNodeData;
@@ -37,6 +40,15 @@ const getStatusStyle = (status?: 'known' | 'ready' | 'locked') => {
 
 export default function ConceptNode({ data }: Readonly<ConceptNodeProps>) {
   const statusStyle = getStatusStyle(data.status);
+  const { activeLearningPath } = useLearningPathContext();
+  const navigate = useNavigate();
+
+  const handleEvaluate = () => {
+    if (activeLearningPath?.id && data.concept?.id) {
+      const url = generateEvaluateUrl(activeLearningPath.id, data.concept.id);
+      navigate(url);
+    }
+  };
 
   return (
     <>
@@ -45,8 +57,12 @@ export default function ConceptNode({ data }: Readonly<ConceptNodeProps>) {
         position={data.toolbarPosition as Position | undefined}
         align={data.align as 'start' | 'center' | 'end' | undefined}
       >
-        <Button variant="contained" size="small">Evaluate</Button>
-        <Button variant="contained" size="small">Content</Button>
+        <Button variant="contained" size="small" onClick={handleEvaluate}>Evaluate</Button>
+        <Button variant="contained" size="small"
+          onClick={() => {
+            console.log(data)
+          }}
+        >Content</Button>
       </NodeToolbar>
       
       <Handle type="target" position={Position.Left} />
