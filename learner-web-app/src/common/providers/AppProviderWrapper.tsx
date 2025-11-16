@@ -19,7 +19,8 @@ const queryClient = new QueryClient({
 });
 
 const BRANDING = {
-  title: 'Learnora',
+  logo: <img src="https://mui.com/static/logo.png" alt="MUI logo" />,
+  title: 'Learnora'
 };
 
 const AUTHENTICATION: Authentication = {

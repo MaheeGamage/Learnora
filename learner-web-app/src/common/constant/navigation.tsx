@@ -1,7 +1,9 @@
 import type { Navigation } from '@toolpad/core';
 // import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
-// import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import RouteIcon from '@mui/icons-material/Route';
+import SchoolIcon from '@mui/icons-material/School';
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 
 export const NAVIGATION: Navigation = [
   {
@@ -16,14 +18,17 @@ export const NAVIGATION: Navigation = [
   },
   {
     segment: 'learning-path',
-    title: 'Learning Path'
+    title: 'Learning Paths',
+    icon: <RouteIcon />,
   },
   {
     segment: 'content',
-    title: 'Content'
+    title: 'Content',
+    icon: <SchoolIcon />,
   },
   {
     segment: 'evaluate',
-    title: 'Evaluate'
+    title: 'Evaluate',
+    icon: <QuestionMarkIcon />,
   },
 ];

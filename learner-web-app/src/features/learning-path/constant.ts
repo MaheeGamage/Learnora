@@ -76,7 +76,7 @@ export const GRAPH_CONFIG = {
  */
 export const MCQ_CONFIG = {
     // Minimum score percentage to update knowledge graph
-    PASSING_SCORE_THRESHOLD: 80,
+    PASSING_SCORE_THRESHOLD: 50,
     
     // Ontology predicates for KG updates
     ONTOLOGY_PREDICATES: {

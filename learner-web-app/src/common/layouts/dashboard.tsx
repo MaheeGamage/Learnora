@@ -104,6 +104,7 @@ export default function MainDashboardLayout() {
 
   return (
     <DashboardLayout
+      disableCollapsibleSidebar
       renderPageItem={renderPageItem}
       slots={{
         toolbarActions: CustomActions,
@@ -117,7 +118,7 @@ export default function MainDashboardLayout() {
           agentTitle="AI Learning Assistant"
         />}
       >
-        <PageContainer title=''>
+        <PageContainer breadcrumbs={[]}>
           <Outlet />
         </PageContainer>
       </ChatPanelWrapper>

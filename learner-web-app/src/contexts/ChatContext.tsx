@@ -22,9 +22,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
   // Load from localStorage on mount
   useEffect(() => {
     const storedThreadId = localStorage.getItem(STORAGE_KEY);
-    if (storedThreadId) {
-      setActiveThreadIdState(storedThreadId);
-    }
+    // TODO: Temporarily disabled to avoid issues with stale thread IDs
+    // if (storedThreadId) {
+    //   setActiveThreadIdState(storedThreadId);
+    // }
     setIsHydrated(true);
   }, []);
 
