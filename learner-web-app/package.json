@@ -30,6 +30,7 @@
     "jsonld": "^8.3.3",
     "react": "^19.1.1",
     "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
     "sigma": "^3.0.2"
   },
   "devDependencies": {

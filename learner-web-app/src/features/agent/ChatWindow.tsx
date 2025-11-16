@@ -11,6 +11,7 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import PersonIcon from '@mui/icons-material/Person';
+import ReactMarkdown from 'react-markdown';
 
 export interface ChatMessage {
   readonly id: string;
@@ -70,7 +71,75 @@ function MessageBubble({
           overflowWrap: 'break-word',
         }}
       >
-        <Typography variant="body2">{message.text}</Typography>
+        <Box
+          sx={{
+            '& p': {
+              margin: 0,
+              marginBottom: '0.5em',
+              fontSize: '0.875rem',
+              lineHeight: 1.43,
+              '&:last-child': {
+                marginBottom: 0,
+              },
+            },
+            '& strong': {
+              fontWeight: 700,
+            },
+            '& em': {
+              fontStyle: 'italic',
+            },
+            '& code': {
+              bgcolor: isUser ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+              padding: '2px 4px',
+              borderRadius: '3px',
+              fontSize: '0.85em',
+              fontFamily: 'monospace',
+            },
+            '& pre': {
+              bgcolor: isUser ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+              padding: '8px',
+              borderRadius: '4px',
+              overflow: 'auto',
+              margin: '0.5em 0',
+              '& code': {
+                bgcolor: 'transparent',
+                padding: 0,
+              },
+            },
+            '& ul, & ol': {
+              marginTop: '0.5em',
+              marginBottom: '0.5em',
+              paddingLeft: '1.5em',
+            },
+            '& li': {
+              marginBottom: '0.25em',
+              fontSize: '0.875rem',
+              lineHeight: 1.43,
+            },
+            '& a': {
+              color: isUser ? 'inherit' : 'primary.main',
+              textDecoration: 'underline',
+            },
+            '& h1, & h2, & h3, & h4, & h5, & h6': {
+              marginTop: '0.5em',
+              marginBottom: '0.5em',
+              fontWeight: 600,
+              '&:first-child': {
+                marginTop: 0,
+              },
+            },
+            '& blockquote': {
+              borderLeft: '3px solid',
+              borderColor: isUser ? 'rgba(255, 255, 255, 0.3)' : 'divider',
+              paddingLeft: '1em',
+              marginLeft: 0,
+              marginTop: '0.5em',
+              marginBottom: '0.5em',
+            },
+          }}
+        >
+          <ReactMarkdown>{message.text}</ReactMarkdown>
+        </Box>
         {message.timestamp && (
           <Typography
             variant="caption"
