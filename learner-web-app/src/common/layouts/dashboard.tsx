@@ -90,6 +90,9 @@ export default function MainDashboardLayout() {
     if (location.pathname === '/') {
       return '';
     }
+    if (location.pathname.startsWith('/learning-path')) {
+      return '';
+    }
     return undefined;
   };
 

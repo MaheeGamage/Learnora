@@ -112,7 +112,7 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = () => {
   return (
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h6">Learning Paths</Typography>
+        <Typography variant="h4" component="h1" gutterBottom>Learning Paths</Typography>
         <Button
           variant="contained"
           // startIcon={<AddIcon />}

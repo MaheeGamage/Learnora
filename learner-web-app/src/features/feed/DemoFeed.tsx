@@ -78,13 +78,14 @@ const DUMMY_FEED_ITEMS: FeedItem[] = [
  */
 const DemoFeed: React.FC = () => {
     return (
-        <Container maxWidth="sm" sx={{ py: 4 }}>
+        <Container maxWidth="md">
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
                     Your Learning Feed
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                    Discover content and test your knowledge based on your learning path.
+                    {/* Discover content and test your knowledge based on your learning path. */}
+                    This is a demo feed for demosntration purposes.
                 </Typography>
             </Box>
 
