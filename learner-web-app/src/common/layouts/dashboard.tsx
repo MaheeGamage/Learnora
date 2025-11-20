@@ -49,22 +49,6 @@ function CustomPageItem({
           <AutoAwesomeIcon />
         </IconButton>
       ) : (
-        // <ListItemButton>
-        //   <ListItemIcon
-        //     sx={(theme) => ({
-        //       color: theme.palette.secondary.main,
-        //     })}
-        //   >
-        //     <AutoAwesomeIcon />
-        //   </ListItemIcon>
-        //   <ListItemText
-        //     primary={item.title}
-        //     sx={{
-        //       whiteSpace: 'nowrap',
-        //     }}
-        //   />
-        // </ListItemButton>
-        // <LearningPathSelector />
         <LearningPathSelector
           learningPaths={learningPaths}
           selectedPathId={activeLearningPath ? activeLearningPath.id : null}
@@ -102,6 +86,13 @@ export default function MainDashboardLayout() {
     return <Navigate to={redirectTo} replace />;
   }
 
+  const getPageTitle = () => {
+    if (location.pathname === '/') {
+      return '';
+    }
+    return undefined;
+  };
+
   return (
     <DashboardLayout
       disableCollapsibleSidebar
@@ -118,7 +109,7 @@ export default function MainDashboardLayout() {
           agentTitle="AI Learning Assistant"
         />}
       >
-        <PageContainer breadcrumbs={[]}>
+        <PageContainer breadcrumbs={[]} title={getPageTitle()}>
           <Outlet />
         </PageContainer>
       </ChatPanelWrapper>
