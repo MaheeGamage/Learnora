@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "react-router dev",
     "dev_old": "vite",
-    "build": "tsc -b && vite build",
+    "build": "react-router build",
+    "build_old": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "npx serve build/client -s",
+    "start_old": "react-router-serve ./build/client/index.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
