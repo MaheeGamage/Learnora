@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup SSH
+      - name: Setup SSH 2
         run: |
           mkdir -p ~/.ssh
           # Write SSH key and ensure proper formatting
