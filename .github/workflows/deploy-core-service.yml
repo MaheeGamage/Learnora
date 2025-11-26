@@ -26,9 +26,15 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
+          # Write SSH key and ensure proper formatting
           echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          # Remove any carriage returns and ensure proper line endings
+          sed -i 's/\r$//' ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          # Add VM to known hosts
           ssh-keyscan -H 86.50.20.100 >> ~/.ssh/known_hosts
+          # Test SSH connection
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@86.50.20.100 "echo 'SSH connection successful'"
       
       - name: Create .env file
         run: |
