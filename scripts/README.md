@@ -1,0 +1,1 @@
+`run-core-service.sh` and `run-learner-web-app.sh` files are not production level implementation. Mostly it runs dev version in vm.

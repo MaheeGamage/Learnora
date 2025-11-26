@@ -1,0 +1,122 @@
+@prefix ont: <http://learnora.ai/ont#> .
+@prefix users: <http://learnora.ai/users#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ==========================================
+# Combined Ontology for Learnora
+# Merges Concept, Learning Path, and User Knowledge ontologies
+# ==========================================
+
+# ===== Classes =====
+
+ont:Concept a owl:Class ;
+    rdfs:label "Learning Concept" ;
+    rdfs:comment "Represents a knowledge concept that can be learned. Examples: Python, Neural Networks, Linear Algebra" .
+
+ont:LearningPath a owl:Class ;
+    rdfs:label "Learning Path" ;
+    rdfs:comment "A structured sequence of concepts to learn for achieving a learning goal" .
+
+ont:Goal a owl:Class ;
+    rdfs:label "Learning Goal"
+    rdfs:comment "Final target of given learning path"
+
+ont:User a owl:Class ;
+    rdfs:label "Learner User" ;
+    rdfs:comment "A user of the Learnora learning platform" .
+
+# ===== Object Properties =====
+
+ont:hasPrerequisite a owl:ObjectProperty ;
+    rdfs:label "has prerequisite" ;
+    rdfs:comment "Indicates that this concept has another concept as a prerequisite. Points backward from advanced to foundational concepts." ;
+    rdfs:domain ont:Concept ;
+    rdfs:range ont:Concept .
+
+ont:includesConcept a owl:ObjectProperty ;
+    rdfs:label "includes concept" ;
+    rdfs:comment "Indicates that this learning path includes a specific concept" ;
+    rdfs:domain ont:LearningPath ;
+    rdfs:range ont:Concept .
+
+ont:knows a owl:ObjectProperty ;
+    rdfs:label "knows concept" ;
+    rdfs:comment "Indicates that the user has learned and knows this concept" ;
+    rdfs:domain ont:User ;
+    rdfs:range ont:Concept .
+
+ont:learning a owl:ObjectProperty ;
+    rdfs:label "currently learning" ;
+    rdfs:comment "Indicates that the user is currently learning this concept" ;
+    rdfs:domain ont:User ;
+    rdfs:range ont:Concept .
+
+ont:followsPath a owl:ObjectProperty ;
+    rdfs:label "follows learning path" ;
+    rdfs:comment "Indicates that the user is following this learning path" ;
+    rdfs:domain ont:User ;
+    rdfs:range ont:LearningPath .
+
+ont:isFollowedBy a owl:ObjectProperty ;
+    rdfs:label "is followed by user" ;
+    rdfs:comment "Indicates that this learning path is followed by the given user" ;
+    rdfs:domain ont:LearningPath ;
+    rdfs:range ont:User ;
+    owl:inverseOf ont:followsPath .
+
+ont:hasGoal a owl:ObjectProperty ;
+    rdfs:label "learning path has a goal" ;
+    rdfs:comment "Indicate the goal of a given learning path" ;
+    rdfs:domain ont:LearningPath ;
+    rdfs:range ont:Goal .
+
+# ===== Datatype Properties =====
+
+ont:label a owl:DatatypeProperty ;
+    rdfs:label "concept label" ;
+    rdfs:comment "Human-readable name of the concept" ;
+    rdfs:domain ont:Concept ;
+    rdfs:range xsd:string .
+
+ont:description a owl:DatatypeProperty ;
+    rdfs:label "description" ;
+    rdfs:comment "Detailed description of the concept" ;
+    rdfs:domain ont:Concept ;
+    rdfs:range xsd:string .
+
+ont:topic a owl:DatatypeProperty ;
+    rdfs:label "learning topic" ;
+    rdfs:comment "The main topic or goal of this learning path" ;
+    rdfs:domain ont:LearningPath ;
+    rdfs:range xsd:string .
+
+ont:threadId a owl:DatatypeProperty ;
+    rdfs:label "thread identifier" ;
+    rdfs:comment "Unique identifier for the learning path thread" ;
+    rdfs:domain ont:LearningPath ;
+    rdfs:range xsd:string .
+
+ont:createdAt a owl:DatatypeProperty ;
+    rdfs:label "created at" ;
+    rdfs:comment "Timestamp when the learning path was created" ;
+    rdfs:domain ont:LearningPath ;
+    rdfs:range xsd:dateTime .
+
+ont:userId a owl:DatatypeProperty ;
+    rdfs:label "user identifier" ;
+    rdfs:comment "Unique identifier for the user" ;
+    rdfs:domain ont:User ;
+    rdfs:range xsd:string .
+
+ont:learnedAt a owl:DatatypeProperty ;
+    rdfs:label "learned at" ;
+    rdfs:comment "Timestamp when the user learned a concept" ;
+    rdfs:range xsd:dateTime .
+
+ont:proficiencyLevel a owl:DatatypeProperty ;
+    rdfs:label "proficiency level" ;
+    rdfs:comment "User's proficiency level for a concept (e.g., beginner, intermediate, expert)" ;
+    rdfs:range xsd:string .

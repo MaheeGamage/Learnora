@@ -1,4 +1,18 @@
-# React + TypeScript + Vite
+# Learnora
+
+Uses following packages/framworks
+1. React Router
+2. MUI
+3. MUI Toolpad Core
+
+<br/>
+<br/>
+
+---
+
+### Below is already existed readme content when use the template
+
+## React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

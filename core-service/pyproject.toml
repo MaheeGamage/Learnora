@@ -5,9 +5,20 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aiosqlite>=0.21.0",
+    # asyncpg is included to support PostgreSQL in addition to SQLite (aiosqlite).
+    "asyncpg>=0.30.0",
+    "fastapi-users[sqlalchemy]>=14.0.1",
     "fastapi[standard]>=0.119.0",
-    "langchain-core>=0.3.79",
-    "langchain[google-genai]>=0.3.27",
-    "langgraph>=0.6.10",
+    "langchain[google-genai]>=1.0.5",
+    "langgraph>=1.0.3",
+    "pydantic-settings>=2.11.0",
     "python-dotenv>=1.1.1",
+    "rdflib>=7.1.1",
+    "sqlalchemy>=2.0.44",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
 ]
