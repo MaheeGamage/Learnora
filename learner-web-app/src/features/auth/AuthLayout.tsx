@@ -1,43 +1,14 @@
-import {type FormEvent, useState} from 'react';
-import {Alert, Box, Button, Link as MuiLink, Paper, Stack, TextField, Typography,} from '@mui/material';
-import {Link as RouterLink} from 'react-router';
+import type {ReactNode} from 'react';
+import {Box, Stack, Typography} from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import TimelineIcon from '@mui/icons-material/Timeline';
 
-export default function SignInForm() {
-    const [email, setEmail] = useState<string>('');
-    const [password, setPassword] = useState<string>('');
-    const [error, setError] = useState<string>('');
-    const [loading, setLoading] = useState<boolean>(false);
+interface AuthLayoutProps {
+    children: ReactNode;
+}
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-
-        try {
-            // TODO: replace with your real login endpoint
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({email, password}),
-            });
-
-            if (!res.ok) {
-                throw new Error('Invalid email or password');
-            }
-
-            window.location.reload(); // refresh session
-        } catch (err: unknown) {
-            const message =
-                err instanceof Error ? err.message : 'Something went wrong';
-            setError(message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
+export default function AuthLayout({children}: AuthLayoutProps) {
     return (
         <Box
             sx={{
@@ -48,7 +19,7 @@ export default function SignInForm() {
                 color: '#fff',
             }}
         >
-            {/* LEFT: Sign-in card */}
+            {/* LEFT: content (card/form) */}
             <Box
                 sx={{
                     flexBasis: {xs: '100%', md: '40%'},
@@ -59,130 +30,10 @@ export default function SignInForm() {
                     py: {xs: 4, md: 0},
                 }}
             >
-                <Paper
-                    elevation={8}
-                    sx={{
-                        p: 4,
-                        width: '100%',
-                        maxWidth: 420,
-                        borderRadius: 3,
-                        bgcolor: '#181a1f',
-                    }}
-                >
-                    <Stack spacing={3}>
-                        <Box>
-                            <Typography variant="h5" fontWeight={700} color="white">
-                                Welcome back 👋
-                            </Typography>
-                            <Typography variant="body2" sx={{mt: 0.5, color: '#cbd5f5'}}>
-                                Sign in to continue to your account.
-                            </Typography>
-                        </Box>
-
-                        {error && (
-                            <Alert severity="error" variant="outlined">
-                                {error}
-                            </Alert>
-                        )}
-
-                        <Box component="form" onSubmit={handleSubmit} noValidate>
-                            <Stack spacing={2.5}>
-                                <TextField
-                                    label="Email"
-                                    type="email"
-                                    required
-                                    fullWidth
-                                    autoComplete="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    variant="outlined"
-                                    InputLabelProps={{style: {color: '#d1d5db'}}}
-                                    InputProps={{
-                                        sx: {
-                                            color: '#f9fafb',
-                                            '& .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#4b5563',
-                                            },
-                                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#9ca3af',
-                                            },
-                                        },
-                                    }}
-                                />
-
-                                <TextField
-                                    label="Password"
-                                    type="password"
-                                    required
-                                    fullWidth
-                                    autoComplete="current-password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    variant="outlined"
-                                    InputLabelProps={{style: {color: '#d1d5db'}}}
-                                    InputProps={{
-                                        sx: {
-                                            color: '#f9fafb',
-                                            '& .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#4b5563',
-                                            },
-                                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#9ca3af',
-                                            },
-                                        },
-                                    }}
-                                />
-
-                                <Box textAlign="right">
-                                    <MuiLink
-                                        component={RouterLink}
-                                        to="/forgot-password"
-                                        variant="body2"
-                                        underline="hover"
-                                        sx={{color: '#93c5fd'}}
-                                    >
-                                        Forgot password?
-                                    </MuiLink>
-                                </Box>
-
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    fullWidth
-                                    size="large"
-                                    disabled={loading}
-                                    sx={{
-                                        mt: 1,
-                                        borderRadius: 2,
-                                        py: 1.2,
-                                        background:
-                                            'linear-gradient(135deg, #60a5fa 0%, #38bdf8 100%)',
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    {loading ? 'Signing in…' : 'SIGN IN'}
-                                </Button>
-                            </Stack>
-                        </Box>
-
-                        <Box textAlign="center">
-                            <Typography variant="body2" sx={{color: '#e5e7eb'}}>
-                                Don&apos;t have an account?{' '}
-                                <MuiLink
-                                    component={RouterLink}
-                                    to="/register"
-                                    underline="hover"
-                                    sx={{fontWeight: 600, color: '#93c5fd'}}
-                                >
-                                    Create account
-                                </MuiLink>
-                            </Typography>
-                        </Box>
-                    </Stack>
-                </Paper>
+                {children}
             </Box>
 
-            {/* RIGHT: Animated education hero */}
+            {/* RIGHT: animated education hero */}
             <Box
                 sx={{
                     flexGrow: 1,
@@ -195,7 +46,7 @@ export default function SignInForm() {
                         'radial-gradient(circle at top left, #1d4ed8 0, transparent 50%), radial-gradient(circle at bottom right, #06b6d4 0, transparent 55%), #050608',
                 }}
             >
-                {/* Keyframes for floating cards */}
+                {/* Subtle grid overlay */}
                 <Box
                     sx={{
                         position: 'absolute',
@@ -241,7 +92,6 @@ export default function SignInForm() {
                         learning paths tailored to you.
                     </Typography>
 
-                    {/* Floating cards row */}
                     <Stack
                         direction="row"
                         spacing={3}
@@ -314,7 +164,6 @@ export default function SignInForm() {
                         </Box>
                     </Stack>
 
-                    {/* Progress stat */}
                     <Box
                         sx={{
                             mt: 1,

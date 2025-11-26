@@ -1,9 +1,9 @@
 import LinearProgress from '@mui/material/LinearProgress';
 import {Navigate, useSearchParams} from 'react-router';
 import {useSession} from '../common/hooks/useSession';
-import SignInForm from '../features/auth/SignInForm';
+import ForgotPasswordForm from "../features/auth/ForgotPasswordForm";
 
-export default function SignIn() {
+export default function ForgetPassword() {
     const {session, loading} = useSession();
     const [searchParams] = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/';
@@ -20,5 +20,5 @@ export default function SignIn() {
         return <Navigate to={callbackUrl}/>;
     }
 
-    return <SignInForm/>;
+    return <ForgotPasswordForm/>;
 }
