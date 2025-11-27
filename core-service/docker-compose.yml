@@ -7,18 +7,15 @@ services:
     ports:
       - "8000:80"
     environment:
-      - APP_ENV=${APP_ENV}
-      - DEBUG=${DEBUG}
-      - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_URL=${DATABASE_URL}
-      - DB_ECHO=${DB_ECHO}
-      - DB_POOL_SIZE=${DB_POOL_SIZE}
-      - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW}
-      - LANGSMITH_TRACING=${LANGSMITH_TRACING}
-      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
-      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT}
-      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - APP_ENV=${APP_ENV:-development}
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-change-this-to-a-random-secret-key-in-production}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./learnora.db}
+      - DB_ECHO=${DB_ECHO:-False}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://eu.api.smith.langchain.com}
+    env_file:
+      - .env
     volumes:
       - ./data:/app/data
     restart: unless-stopped

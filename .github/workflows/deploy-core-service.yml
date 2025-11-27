@@ -38,20 +38,33 @@ jobs:
       
       - name: Create .env file
         run: |
-          cat > core-service/.env << EOF
-          APP_ENV=${{ secrets.APP_ENV }}
-          DEBUG=${{ secrets.DEBUG }}
+          cat > core-service/.env << 'EOF'
+          APP_ENV=${{ secrets.APP_ENV || 'production' }}
+          DEBUG=${{ secrets.DEBUG || 'False' }}
           SECRET_KEY=${{ secrets.SECRET_KEY }}
           DATABASE_URL=${{ secrets.DATABASE_URL }}
-          DB_ECHO=${{ secrets.DB_ECHO }}
-          DB_POOL_SIZE=${{ secrets.DB_POOL_SIZE }}
-          DB_MAX_OVERFLOW=${{ secrets.DB_MAX_OVERFLOW }}
-          LANGSMITH_TRACING=${{ secrets.LANGSMITH_TRACING }}
-          LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}
-          LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}
-          LANGSMITH_ENDPOINT=${{ secrets.LANGSMITH_ENDPOINT }}
+          DB_ECHO=${{ secrets.DB_ECHO || 'False' }}
+          LANGSMITH_TRACING=${{ secrets.LANGSMITH_TRACING || 'false' }}
+          LANGSMITH_ENDPOINT=${{ secrets.LANGSMITH_ENDPOINT || 'https://eu.api.smith.langchain.com' }}
           GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
           EOF
+          
+          # Add optional variables only if they are set
+          if [ -n "${{ secrets.DB_POOL_SIZE }}" ]; then
+            echo "DB_POOL_SIZE=${{ secrets.DB_POOL_SIZE }}" >> core-service/.env
+          fi
+          
+          if [ -n "${{ secrets.DB_MAX_OVERFLOW }}" ]; then
+            echo "DB_MAX_OVERFLOW=${{ secrets.DB_MAX_OVERFLOW }}" >> core-service/.env
+          fi
+          
+          if [ -n "${{ secrets.LANGSMITH_API_KEY }}" ]; then
+            echo "LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}" >> core-service/.env
+          fi
+          
+          if [ -n "${{ secrets.LANGSMITH_PROJECT }}" ]; then
+            echo "LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}" >> core-service/.env
+          fi
       
       - name: Copy files to VM
         run: |
