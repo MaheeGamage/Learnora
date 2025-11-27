@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  core-service:
+    build: .
+    container_name: learnora-core-service
+    ports:
+      - "8000:80"
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-change-this-to-a-random-secret-key-in-production}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./learnora.db}
+      - DB_ECHO=${DB_ECHO:-False}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://eu.api.smith.langchain.com}
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - learnora-network
+
+networks:
+  learnora-network:
+    driver: bridge

@@ -1,0 +1,86 @@
+name: Deploy Learner Web App to VM
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'learner-web-app/**'
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE_NAME: learnora-learner-web-app
+  DEPLOY_PATH: /home/ubuntu/learnora/learner-web-app
+
+jobs:
+  deploy:
+    name: Deploy Frontend to Ubuntu VM
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          sed -i 's/\r$//' ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 86.50.20.100 >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@86.50.20.100 "echo 'SSH connection successful'"
+      
+      - name: Create .env file for frontend
+        run: |
+          cat > learner-web-app/.env.production << 'EOF'
+          VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL || 'http://86.50.20.100:8000' }}
+          EOF
+      
+      - name: Copy files to VM
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@86.50.20.100 "mkdir -p ${{ env.DEPLOY_PATH }}"
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            --exclude='.react-router' \
+            --exclude='.env.local' \
+            ./learner-web-app/ ubuntu@86.50.20.100:${{ env.DEPLOY_PATH }}/
+      
+      - name: Deploy with Docker
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@86.50.20.100 << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Stop and remove existing container
+            docker stop learnora-learner-web-app || true
+            docker rm learnora-learner-web-app || true
+            
+            # Build new image
+            docker build -t learnora-learner-web-app .
+            
+            # Run the container
+            docker run -d \
+              --name learnora-learner-web-app \
+              --network learnora-network \
+              -p 5001:80 \
+              --restart unless-stopped \
+              learnora-learner-web-app
+            
+            # Clean up old images
+            docker image prune -f
+            
+            # Check if container is running
+            sleep 5
+            docker ps | grep learnora-learner-web-app
+          EOF
+      
+      - name: Health Check
+        run: |
+          sleep 10
+          curl -f http://86.50.20.100:5001/ || exit 1
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+          rm -f learner-web-app/.env.production

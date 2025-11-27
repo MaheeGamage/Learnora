@@ -1,0 +1,109 @@
+name: Deploy Core Service to VM
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'core-service/**'
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE_NAME: learnora-core-service
+  DEPLOY_PATH: /home/ubuntu/learnora/core-service
+
+jobs:
+  deploy:
+    name: Deploy to Ubuntu VM
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          # Write SSH key and ensure proper formatting
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          # Remove any carriage returns and ensure proper line endings
+          sed -i 's/\r$//' ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Add VM to known hosts
+          ssh-keyscan -H 86.50.20.100 >> ~/.ssh/known_hosts
+          # Test SSH connection
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@86.50.20.100 "echo 'SSH connection successful'"
+      
+      - name: Create .env file
+        run: |
+          cat > core-service/.env << 'EOF'
+          APP_ENV=${{ secrets.APP_ENV || 'production' }}
+          DEBUG=${{ secrets.DEBUG || 'False' }}
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          DB_ECHO=${{ secrets.DB_ECHO || 'False' }}
+          LANGSMITH_TRACING=${{ secrets.LANGSMITH_TRACING || 'false' }}
+          LANGSMITH_ENDPOINT=${{ secrets.LANGSMITH_ENDPOINT || 'https://eu.api.smith.langchain.com' }}
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+          EOF
+          
+          # Add optional variables only if they are set
+          if [ -n "${{ secrets.DB_POOL_SIZE }}" ]; then
+            echo "DB_POOL_SIZE=${{ secrets.DB_POOL_SIZE }}" >> core-service/.env
+          fi
+          
+          if [ -n "${{ secrets.DB_MAX_OVERFLOW }}" ]; then
+            echo "DB_MAX_OVERFLOW=${{ secrets.DB_MAX_OVERFLOW }}" >> core-service/.env
+          fi
+          
+          if [ -n "${{ secrets.LANGSMITH_API_KEY }}" ]; then
+            echo "LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}" >> core-service/.env
+          fi
+          
+          if [ -n "${{ secrets.LANGSMITH_PROJECT }}" ]; then
+            echo "LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}" >> core-service/.env
+          fi
+      
+      - name: Copy files to VM
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@86.50.20.100 "mkdir -p ${{ env.DEPLOY_PATH }}"
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            --exclude='.venv' \
+            --exclude='__pycache__' \
+            --exclude='.pytest_cache' \
+            --exclude='*.pyc' \
+            ./core-service/ ubuntu@86.50.20.100:${{ env.DEPLOY_PATH }}/
+      
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@86.50.20.100 << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Stop and remove existing containers
+            docker-compose down || true
+            
+            # Build and start the new container
+            docker-compose build --no-cache
+            docker-compose up -d
+            
+            # Clean up old images
+            docker image prune -f
+            
+            # Check if container is running
+            sleep 5
+            docker-compose ps
+            
+            # Show logs
+            docker-compose logs --tail=50
+          EOF
+      
+      - name: Health Check
+        run: |
+          sleep 10
+          curl -f http://86.50.20.100:8000/docs || exit 1
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+          rm -f core-service/.env
