@@ -29,8 +29,8 @@ function RightSidePanel({ open, onClose, width = 350, chatComponent, title = 'Ch
         '& .MuiDrawer-paper': {
           width: { xs: '100%', sm: width },
           boxSizing: 'border-box',
-          top: { xs: 0, sm: 64 }, // Start below the toolbar on desktop
-          height: { xs: '100%', sm: 'calc(100% - 64px)' },
+          top: 64, // Start below the toolbar on all screen sizes
+          height: 'calc(100% - 64px)',
           borderLeft: '1px solid',
           borderColor: 'divider',
         },
