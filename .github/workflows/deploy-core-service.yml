@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-      - mahee-dev
-      - pipeline-to-deploy-BE
     paths:
       - 'core-service/**'
   workflow_dispatch:
