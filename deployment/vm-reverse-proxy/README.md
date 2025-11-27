@@ -81,6 +81,34 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+### Blocking Multiple Endpoints
+
+To block multiple endpoints at once, add multiple location blocks in the config:
+
+```nginx
+location /register {
+    return 403;
+}
+
+location /admin {
+    return 403;
+}
+
+location /delete-account {
+    return 403;
+}
+```
+
+You can also use regex to block patterns:
+
+```nginx
+location ~ ^/(register|admin|delete-account) {
+    return 403;
+}
+```
+
+This blocks all three endpoints with a single rule.
+
 ## 4. Unblocking an Endpoint
 
 To unblock `/register` or any blocked route:
