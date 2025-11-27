@@ -19,7 +19,7 @@ const queryClient = new QueryClient({
 });
 
 const BRANDING = {
-  logo: <img src="https://mui.com/static/logo.png" alt="MUI logo" />,
+  logo: <img src="/logo-filled.png" alt="MUI logo" />,
   title: 'Learnora'
 };
 
