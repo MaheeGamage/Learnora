@@ -15,7 +15,7 @@ services:
       - DB_ECHO=${DB_ECHO:-False}
       - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
       - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://eu.api.smith.langchain.com}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY} # comment this line when testing locally with api key is in env file
+      # - GOOGLE_API_KEY=${GOOGLE_API_KEY} # comment this line when testing locally with api key is in env file
     env_file:
       - ./core-service/.env
     volumes:

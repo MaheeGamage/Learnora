@@ -121,5 +121,5 @@ jobs:
         if: always()
         run: |
           rm -f ~/.ssh/deploy_key
-          rm -f core-service/.env
-          rm -f learner-web-app/.env.production
+          # rm -f core-service/.env
+          # rm -f learner-web-app/.env.production
