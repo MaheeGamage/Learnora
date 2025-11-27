@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - both-fe-be-deployment-setup
     paths:
       - 'core-service/**'
       - 'learner-web-app/**'
