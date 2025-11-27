@@ -2,11 +2,20 @@
 
 set -e
 
-echo "=== Installing Nginx ==="
-sudo apt update
-sudo apt install -y nginx
+echo "=== Checking Nginx installation ==="
+if ! command -v nginx &> /dev/null; then
+    echo "Nginx not found. Installing..."
+    sudo apt update
+    sudo apt install -y nginx
+else
+    echo "Nginx is already installed. Skipping installation."
+fi
 
-echo "=== Creating Nginx reverse proxy config for API ==="
+echo "=== Ensuring Nginx is enabled and running ==="
+sudo systemctl enable nginx || true
+sudo systemctl start nginx || true
+
+echo "=== Creating Nginx reverse proxy config ==="
 
 NGINX_CONF="/etc/nginx/sites-available/api"
 
@@ -20,9 +29,19 @@ server {
         return 403;
     }
 
-    # Forward all other requests to your API
-    location / {
+    # Forward API requests to backend
+    location /api {
         proxy_pass http://127.0.0.1:8000;
+
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    # Forward all other requests to frontend
+    location / {
+        proxy_pass http://127.0.0.1:5001;
 
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
