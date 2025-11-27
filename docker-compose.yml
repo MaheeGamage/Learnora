@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # Backend Service
+  core-service:
+    build: ./core-service
+    container_name: learnora-core-service
+    ports:
+      - "8000:80"
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-change-this-to-a-random-secret-key-in-production}
+      # - DATABASE_URL=${DATABASE_URL:-sqlite:///./learnora.db}
+      - DB_ECHO=${DB_ECHO:-False}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://eu.api.smith.langchain.com}
+      # - GOOGLE_API_KEY=${GOOGLE_API_KEY} # comment this line when testing locally with api key is in env file
+    env_file:
+      - ./core-service/.env
+    volumes:
+      - ./core-service/data:/app/data
+    restart: unless-stopped
+    networks:
+      - learnora-network
+
+  # Frontend Service
+  learner-web-app:
+    build: ./learner-web-app
+    container_name: learnora-learner-web-app
+    ports:
+      - "5001:80"
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
+    restart: unless-stopped
+    networks:
+      - learnora-network
+    depends_on:
+      - core-service
+
+networks:
+  learnora-network:
+    driver: bridge

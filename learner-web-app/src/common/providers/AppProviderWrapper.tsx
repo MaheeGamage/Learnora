@@ -7,6 +7,7 @@ import { ChatProvider } from '../../contexts/ChatContext';
 import { signOut, getCurrentSession } from '../../features/auth/authService';
 import { NAVIGATION } from '../constant/navigation';
 import { LearningPathContextProvider } from '../../contexts/LearningPathContextProvider';
+import appTheme from '../../theme/appTheme';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -19,7 +20,7 @@ const queryClient = new QueryClient({
 });
 
 const BRANDING = {
-  logo: <img src="https://mui.com/static/logo.png" alt="MUI logo" />,
+  logo: <img src="/logo-filled.png" alt="MUI logo" />,
   title: 'Learnora'
 };
 
@@ -64,6 +65,7 @@ export default function AppProviderWrapper({ children }: Readonly<{ children: Re
         branding={BRANDING}
         session={session}
         authentication={AUTHENTICATION}
+        theme={appTheme}
       >
         <SessionContext.Provider value={sessionContextValue}>
           <LearningPathContextProvider>

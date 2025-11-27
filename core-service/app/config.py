@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     
     # API Settings
     API_V1_PREFIX: str = "/api/v1"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    CORS_ORIGINS: list[str] = ["*"]
     
     # Knowledge Graph Settings
     KG_STORAGE_PATH: str = "./data/graph"
