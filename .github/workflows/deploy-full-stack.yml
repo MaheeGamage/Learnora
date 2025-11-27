@@ -111,11 +111,11 @@ jobs:
       - name: Health Check - Backend
         run: |
           sleep 30
-          curl -f http://86.50.20.100:8000/docs || exit 1
+          curl -f http://86.50.20.100/api/v1/health || exit 1
       
       - name: Health Check - Frontend
         run: |
-          curl -f http://86.50.20.100:5001/ || exit 1
+          curl -f http://86.50.20.100/ || exit 1
       
       - name: Cleanup
         if: always()
