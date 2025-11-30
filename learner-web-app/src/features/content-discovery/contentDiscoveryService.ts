@@ -115,7 +115,7 @@ export async function searchContent(
     token: string
 ): Promise<SearchResponse> {
     const response = await fetch(
-        `${API_BASE_URL}${API_V1_PREFIX}/content-discovery/search`,
+        `${API_BASE_URL}/content-discovery/search`,
         {
             method: 'POST',
             headers: {
@@ -141,7 +141,7 @@ export async function crawlUrls(
     token: string
 ): Promise<CrawlResponse> {
     const response = await fetch(
-        `${API_BASE_URL}${API_V1_PREFIX}/content-discovery/crawl`,
+        `${API_BASE_URL}/content-discovery/crawl`,
         {
             method: 'POST',
             headers: {
@@ -167,7 +167,7 @@ export async function indexContent(
     token: string
 ): Promise<IndexContentResponse> {
     const response = await fetch(
-        `${API_BASE_URL}${API_V1_PREFIX}/content-discovery/index`,
+        `${API_BASE_URL}/content-discovery/index`,
         {
             method: 'POST',
             headers: {
@@ -193,7 +193,7 @@ export async function setCustomKeywords(
     token: string
 ): Promise<SetKeywordsResponse> {
     const response = await fetch(
-        `${API_BASE_URL}${API_V1_PREFIX}/content-discovery/set-keywords`,
+        `${API_BASE_URL}/content-discovery/set-keywords`,
         {
             method: 'POST',
             headers: {
@@ -219,7 +219,7 @@ export async function enableAutoDiscovery(
     token: string
 ): Promise<{ auto_discovery_enabled: boolean }> {
     const response = await fetch(
-        `${API_BASE_URL}${API_V1_PREFIX}/content-discovery/enable-auto-discovery?enabled=${enabled}`,
+        `${API_BASE_URL}/content-discovery/enable-auto-discovery?enabled=${enabled}`,
         {
             method: 'POST',
             headers: {
@@ -240,7 +240,7 @@ export async function enableAutoDiscovery(
  */
 export async function getContentStats(token: string): Promise<ContentStats> {
     const response = await fetch(
-        `${API_BASE_URL}${API_V1_PREFIX}/content-discovery/stats`,
+        `${API_BASE_URL}/content-discovery/stats`,
         {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -264,7 +264,7 @@ export async function getAllContent(
     token: string
 ): Promise<LearningContent[]> {
     const response = await fetch(
-        `${API_BASE_URL}${API_V1_PREFIX}/content-discovery/contents?skip=${skip}&limit=${limit}`,
+        `${API_BASE_URL}/content-discovery/contents?skip=${skip}&limit=${limit}`,
         {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -287,7 +287,7 @@ export async function getContentById(
     token: string
 ): Promise<LearningContent> {
     const response = await fetch(
-        `${API_BASE_URL}${API_V1_PREFIX}/content-discovery/content/${contentId}`,
+        `${API_BASE_URL}/content-discovery/content/${contentId}`,
         {
             headers: {
                 'Authorization': `Bearer ${token}`,

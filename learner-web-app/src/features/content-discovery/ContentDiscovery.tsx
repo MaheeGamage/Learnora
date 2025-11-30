@@ -105,7 +105,7 @@ export default function ContentDiscovery() {
                 {
                     query: query.trim(),
                     strategy: searchStrategy,
-                    top_k: 20,
+                    top_k: 4,
                     use_nlp: true,
                     auto_discover: true, // ✨ Enable auto-discovery
                     discovery_sources: ['youtube', 'medium', 'github'], // API sources

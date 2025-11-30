@@ -2,7 +2,7 @@
  * Service for managing user learning preferences and interactions
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 export interface UserPreferences {
     id: number;
@@ -118,6 +118,7 @@ export async function trackInteraction(
     interaction: ContentInteraction,
     token: string
 ): Promise<void> {
+    console.log('Tracking URL:', `${API_URL}/preferences/interactions`);
     const response = await fetch(`${API_URL}/preferences/interactions`, {
         method: 'POST',
         headers: {
