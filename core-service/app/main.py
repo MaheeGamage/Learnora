@@ -14,6 +14,9 @@ from app.features.users.router import router as users_router
 from app.features.agent.router import router as agent_router
 from app.database import init_db
 
+from app.features.content_discovery.router import router as content_discovery_router
+from app.features.preference.preference_router import router as preferences_router
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -76,6 +79,20 @@ app.include_router(
 app.include_router(
     users_router,
     prefix=settings.API_V1_PREFIX,
+)
+
+#content discovery router
+app.include_router(
+    content_discovery_router,
+    prefix=f"{settings.API_V1_PREFIX}",
+    tags=["content-discovery"]
+)
+
+# Register user preferences router
+app.include_router(
+    preferences_router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["preferences"]
 )
 
 
