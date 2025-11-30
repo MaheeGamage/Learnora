@@ -3,6 +3,7 @@ from sqlalchemy import select
 from typing import Optional, List
 from app.features.learning_path.models import LearningPath
 from app.features.learning_path.schemas import LearningPathCreate, LearningPathUpdate
+from app.features.users.models import User
 
 
 async def create_learning_path(db: AsyncSession, learning_path: LearningPathCreate) -> LearningPath:
@@ -22,10 +23,11 @@ async def get_learning_path_by_id(db: AsyncSession, learning_path_id: int) -> Op
     return result.scalar_one_or_none()
 
 
-async def get_all_learning_paths(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[LearningPath]:
+async def get_all_learning_paths(db: AsyncSession, user: User, skip: int = 0, limit: int = 100) -> List[LearningPath]:
     """Get all learning paths with pagination."""
     result = await db.execute(
         select(LearningPath)
+        .filter(LearningPath.user_id == user.id)
         .order_by(LearningPath.created_at.desc())
         .offset(skip)
         .limit(limit)

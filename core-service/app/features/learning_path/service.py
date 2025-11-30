@@ -92,11 +92,12 @@ class LearningPathService:
     async def get_all_learning_paths(
         self,
         db: AsyncSession,
+        current_user: User,
         skip: int = 0,
         limit: int = 100
     ) -> List[LearningPath]:
         """Get all learning paths with pagination."""
-        return await crud.get_all_learning_paths(db, skip, limit)
+        return await crud.get_all_learning_paths(db, current_user, skip, limit)
 
     async def update_learning_path(
         self,
