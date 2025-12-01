@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - merging-Imran-content-discovery-code
     paths:
       - 'core-service/**'
       - 'learner-web-app/**'
