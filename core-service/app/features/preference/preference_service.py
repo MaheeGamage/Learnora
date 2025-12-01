@@ -4,8 +4,8 @@ Service for managing and evolving user learning preferences.
 from typing import Dict, List, Optional, Any
 from collections import Counter
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func, desc, select
 import logging
 
 from .preferences import (
@@ -24,14 +24,17 @@ class PreferenceService:
     Manages user preferences and learns from interactions.
     """
     
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
     
-    def get_or_create_preferences(self, user_id: int) -> UserLearningPreferences:
+    async def get_or_create_preferences(self, user_id: int) -> UserLearningPreferences:
         """Get user preferences, creating default if not exists."""
-        prefs = self.db.query(UserLearningPreferences).filter(
-            UserLearningPreferences.user_id == user_id
-        ).first()
+        result = await self.db.execute(
+            select(UserLearningPreferences).filter(
+                UserLearningPreferences.user_id == user_id
+            )
+        )
+        prefs = result.scalar_one_or_none()
         
         if not prefs:
             prefs = UserLearningPreferences(
@@ -45,12 +48,12 @@ class PreferenceService:
                 auto_evolve=True
             )
             self.db.add(prefs)
-            self.db.commit()
-            self.db.refresh(prefs)
+            await self.db.commit()
+            await self.db.refresh(prefs)
         
         return prefs
     
-    def update_preferences(
+    async def update_preferences(
         self,
         user_id: int,
         preferred_formats: Optional[List[str]] = None,
@@ -62,7 +65,7 @@ class PreferenceService:
         auto_evolve: Optional[bool] = None
     ) -> UserLearningPreferences:
         """Update user preferences explicitly."""
-        prefs = self.get_or_create_preferences(user_id)
+        prefs = await self.get_or_create_preferences(user_id)
         
         if preferred_formats is not None:
             prefs.preferred_formats = preferred_formats
@@ -80,12 +83,12 @@ class PreferenceService:
             prefs.auto_evolve = 1 if auto_evolve else 0
         
         prefs.updated_at = datetime.utcnow()
-        self.db.commit()
-        self.db.refresh(prefs)
+        await self.db.commit()
+        await self.db.refresh(prefs)
         
         return prefs
     
-    def track_interaction(
+    async def track_interaction(
         self,
         user_id: int,
         content_id: str,
@@ -115,18 +118,18 @@ class PreferenceService:
         )
         
         self.db.add(interaction)
-        self.db.commit()
-        self.db.refresh(interaction)
+        await self.db.commit()
+        await self.db.refresh(interaction)
         
         # Auto-evolve preferences if enabled
-        prefs = self.get_or_create_preferences(user_id)
+        prefs = await self.get_or_create_preferences(user_id)
         if prefs.auto_evolve:
-            self._evolve_preferences(user_id)
+            await self._evolve_preferences(user_id)
         
         # Sync with knowledge graph if content is significantly engaged with
         if completion_percentage >= 50 or interaction_type == InteractionTypeEnum.COMPLETED:
             try:
-                self._sync_interaction_with_knowledge_graph(
+                await self._sync_interaction_with_knowledge_graph(
                     user_id=user_id,
                     content_tags=content_tags or [],
                     content_difficulty=content_difficulty,
@@ -139,19 +142,22 @@ class PreferenceService:
         
         return interaction
     
-    def _evolve_preferences(self, user_id: int) -> None:
+    async def _evolve_preferences(self, user_id: int) -> None:
         """
         Evolve user preferences based on interaction history.
         This is the AI that learns from user behavior!
         """
-        prefs = self.get_or_create_preferences(user_id)
+        prefs = await self.get_or_create_preferences(user_id)
         
         # Get recent interactions (last 30 days)
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        interactions = self.db.query(ContentInteraction).filter(
-            ContentInteraction.user_id == user_id,
-            ContentInteraction.timestamp >= thirty_days_ago
-        ).all()
+        result = await self.db.execute(
+            select(ContentInteraction).filter(
+                ContentInteraction.user_id == user_id,
+                ContentInteraction.timestamp >= thirty_days_ago
+            )
+        )
+        interactions = result.scalars().all()
         
         if not interactions:
             return
@@ -227,7 +233,7 @@ class PreferenceService:
         prefs.learning_style = self._infer_learning_style(interactions)
         
         prefs.updated_at = datetime.utcnow()
-        self.db.commit()
+        await self.db.commit()
     
     def _interaction_weight(self, interaction_type: InteractionTypeEnum) -> float:
         """Weight different interaction types."""
@@ -296,7 +302,7 @@ class PreferenceService:
         
         return style_map.get(top_format, LearningStyleEnum.BALANCED)
     
-    def _sync_interaction_with_knowledge_graph(
+    async def _sync_interaction_with_knowledge_graph(
         self,
         user_id: int,
         content_tags: List[str],
@@ -409,7 +415,7 @@ class PreferenceService:
             
             # Sync learning path progress with updated knowledge graph
             try:
-                self._sync_learning_path_progress(user_id, matched_concept_ids)
+                await self._sync_learning_path_progress(user_id, matched_concept_ids)
             except Exception as e:
                 logger.error(f"Failed to sync learning path progress: {e}")
     
@@ -494,7 +500,7 @@ class PreferenceService:
         
         return tag_normalized == concept_normalized or tag_normalized in concept_normalized or concept_normalized in tag_normalized
     
-    def _sync_learning_path_progress(self, user_id: int, concept_ids: List[str]) -> None:
+    async def _sync_learning_path_progress(self, user_id: int, concept_ids: List[str]) -> None:
         """
         Sync learning path progress after knowledge graph updates.
         Updates mastery levels for all active learning paths containing the updated concepts.
@@ -503,10 +509,13 @@ class PreferenceService:
         from app.features.learning_path.progress_service import LearningPathProgressService
         
         # Find all active learning paths for the user
-        active_paths = self.db.query(LearningPath).filter(
-            LearningPath.user_id == user_id,
-            LearningPath.is_archived == False
-        ).all()
+        result = await self.db.execute(
+            select(LearningPath).filter(
+                LearningPath.user_id == user_id,
+                LearningPath.is_archived == False
+            )
+        )
+        active_paths = result.scalars().all()
         
         if not active_paths:
             logger.debug(f"No active learning paths found for user {user_id}")
@@ -561,12 +570,12 @@ class PreferenceService:
             )
 
     
-    def build_user_profile(self, user_id: int) -> UserProfile:
+    async def build_user_profile(self, user_id: int) -> UserProfile:
         """
         Build a UserProfile for content discovery from stored preferences.
         This combines explicit preferences with learned behavior.
         """
-        prefs = self.get_or_create_preferences(user_id)
+        prefs = await self.get_or_create_preferences(user_id)
         
         return UserProfile(
             user_id=str(user_id),
@@ -577,31 +586,41 @@ class PreferenceService:
             learning_style=prefs.learning_style.value if prefs.learning_style else "balanced"
         )
     
-    def get_insights(self, user_id: int) -> Dict[str, Any]:
+    async def get_insights(self, user_id: int) -> Dict[str, Any]:
         """Get insights about user's learning patterns."""
-        prefs = self.get_or_create_preferences(user_id)
+        prefs = await self.get_or_create_preferences(user_id)
         
         # Get interaction stats
-        total_interactions = self.db.query(func.count(ContentInteraction.id)).filter(
-            ContentInteraction.user_id == user_id
-        ).scalar()
+        total_interactions_result = await self.db.execute(
+            select(func.count(ContentInteraction.id)).filter(
+                ContentInteraction.user_id == user_id
+            )
+        )
+        total_interactions = total_interactions_result.scalar()
         
-        completed_count = self.db.query(func.count(ContentInteraction.id)).filter(
-            ContentInteraction.user_id == user_id,
-            ContentInteraction.completion_percentage >= 80
-        ).scalar()
+        completed_count_result = await self.db.execute(
+            select(func.count(ContentInteraction.id)).filter(
+                ContentInteraction.user_id == user_id,
+                ContentInteraction.completion_percentage >= 80
+            )
+        )
+        completed_count = completed_count_result.scalar()
         
-        avg_rating = self.db.query(func.avg(ContentInteraction.rating)).filter(
-            ContentInteraction.user_id == user_id,
-            ContentInteraction.rating.isnot(None)
-        ).scalar()
+        avg_rating_result = await self.db.execute(
+            select(func.avg(ContentInteraction.rating)).filter(
+                ContentInteraction.user_id == user_id,
+                ContentInteraction.rating.isnot(None)
+            )
+        )
+        avg_rating = avg_rating_result.scalar()
         
         # Recent learning streak
-        recent_days = self.db.query(
-            func.date(ContentInteraction.timestamp).label('day')
-        ).filter(
-            ContentInteraction.user_id == user_id
-        ).distinct().order_by(desc('day')).limit(7).all()
+        recent_days_result = await self.db.execute(
+            select(func.date(ContentInteraction.timestamp).label('day')).filter(
+                ContentInteraction.user_id == user_id
+            ).distinct().order_by(desc('day')).limit(7)
+        )
+        recent_days = recent_days_result.all()
         
         return {
             "preferences": {

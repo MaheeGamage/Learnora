@@ -1,15 +1,15 @@
 """FastAPI router for content discovery endpoints."""
 
 from typing import Dict, List
-
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.features.users.users import current_active_user
 from app.features.users.models import User
 from app.features.preference.preference_service import PreferenceService
+from app.features.content_personalization.router import get_personalization_service
 
 from .models import LearningContent, UserProfile
 from .schemas import (
@@ -63,21 +63,8 @@ async def search_content(
     service = get_discovery_service()
     
     # Build user profile from stored preferences (evolving system!)
-    # Use the sync engine from the async engine
-    from sqlalchemy.orm import Session as SyncSession
-    from sqlalchemy import create_engine
-    from app.config import settings
-    
-    # Create a sync engine for preference service
-    sync_engine = create_engine(
-        settings.DATABASE_URL,
-        echo=False,
-        future=True,
-    )
-    
-    with SyncSession(sync_engine) as sync_db:
-        pref_service = PreferenceService(sync_db)
-        user_profile = pref_service.build_user_profile(user.id)
+    pref_service = PreferenceService(db)
+    user_profile = await pref_service.build_user_profile(user.id)
     
     try:
         results = service.discover_and_personalize(
@@ -93,7 +80,6 @@ async def search_content(
         
         # 🆕 NEW: Apply content personalization if requested
         if request.personalize:
-            from app.features.content_personalization.router import get_personalization_service
             personalization_service = get_personalization_service()
             
             for result in results['results']:
@@ -136,7 +122,6 @@ async def search_content(
                     
                 except Exception as e:
                     # Log error but don't fail the whole request
-                    import logging
                     content_id = result.get('content', {}).get('id', 'unknown')
                     logging.error(f"Failed to personalize content {content_id}: {e}")
                     # Keep original content without personalization
