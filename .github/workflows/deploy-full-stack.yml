@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - merging-Imran-content-discovery-code
     paths:
       - 'core-service/**'
       - 'learner-web-app/**'
@@ -90,21 +91,21 @@ jobs:
             cd ${{ env.DEPLOY_PATH }}
             
             # Stop and remove existing containers
-            docker-compose down || true
+            docker compose down || true
             
             # Build and start containers
-            docker-compose build --no-cache
-            docker-compose up -d
+            docker compose build --no-cache
+            docker compose up -d
             
             # Clean up old images
             docker image prune -f
             
             # Check if containers are running
             sleep 10
-            docker-compose ps
+            docker compose ps
             
             # Show logs
-            docker-compose logs --tail=50
+            docker compose logs --tail=50
           ENDSSH
       
       - name: Health Check - Backend
