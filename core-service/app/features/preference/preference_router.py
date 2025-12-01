@@ -2,10 +2,9 @@
 API routes for user learning preferences.
 """
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-# from app.database.session import get_sync_db
 from app.database import get_db
 from app.features.users.models import User
 from app.features.users.users import current_active_user
@@ -24,11 +23,11 @@ router = APIRouter(prefix="/preferences", tags=["preferences"])
 @router.get("/", response_model=PreferencesResponse)
 async def get_preferences(
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """Get user's learning preferences."""
     service = PreferenceService(db)
-    prefs = service.get_or_create_preferences(user.id)
+    prefs = await service.get_or_create_preferences(user.id)
     
     return PreferencesResponse(
         id=prefs.id,
@@ -49,7 +48,7 @@ async def get_preferences(
 async def update_preferences(
     updates: PreferencesUpdate,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Update user's learning preferences.
@@ -65,7 +64,7 @@ async def update_preferences(
     service = PreferenceService(db)
     
     try:
-        prefs = service.update_preferences(
+        prefs = await service.update_preferences(
             user_id=user.id,
             preferred_formats=updates.preferred_formats,
             learning_style=updates.learning_style,
@@ -97,7 +96,7 @@ async def update_preferences(
 async def track_interaction(
     interaction: InteractionCreate,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Track a content interaction (view, click, completion, etc.).
@@ -112,7 +111,7 @@ async def track_interaction(
     service = PreferenceService(db)
     
     try:
-        tracked = service.track_interaction(
+        tracked = await service.track_interaction(
             user_id=user.id,
             content_id=interaction.content_id,
             interaction_type=interaction.interaction_type,
@@ -146,7 +145,7 @@ async def track_interaction(
 @router.get("/insights", response_model=InsightsResponse)
 async def get_insights(
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get insights about user's learning patterns.
@@ -157,6 +156,6 @@ async def get_insights(
     - How preferences have evolved over time
     """
     service = PreferenceService(db)
-    insights = service.get_insights(user.id)
+    insights = await service.get_insights(user.id)
     
     return InsightsResponse(**insights)
