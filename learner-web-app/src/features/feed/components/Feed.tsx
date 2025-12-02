@@ -29,13 +29,13 @@ const Feed: React.FC = () => {
     return extractReadyConcepts(jsonldArray);
   }, [activeLearningPath]);
 
-  // Preselect all ready concepts on mount or when ready concepts change
-//   useEffect(() => {
-//     if (readyConcepts.length > 0) {
-//       const allConceptIds = new Set(readyConcepts.map(c => c.id));
-//       setSelectedConcepts(allConceptIds);
-//     }
-//   }, [readyConcepts]);
+  // Preselect first 2 ready concepts on mount or when ready concepts change
+  useEffect(() => {
+    if (readyConcepts.length > 0) {
+      const firstTwoConceptIds = new Set(readyConcepts.slice(0, 2).map(c => c.id));
+      setSelectedConcepts(firstTwoConceptIds);
+    }
+  }, [readyConcepts]);
 
   // Generate feed when selected concepts change
   useEffect(() => {

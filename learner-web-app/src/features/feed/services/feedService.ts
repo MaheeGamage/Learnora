@@ -19,7 +19,7 @@ export interface FeedConfig {
  * Default feed configuration
  */
 export const DEFAULT_FEED_CONFIG: FeedConfig = {
-  itemsPerConcept: 1,
+  itemsPerConcept: 2,
   strategy: 'hybrid',
   enablePersonalization: false,
   maxSummaryWords: 150,
