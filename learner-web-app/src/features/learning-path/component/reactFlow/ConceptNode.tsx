@@ -4,42 +4,14 @@ import { useNavigate } from 'react-router';
 import type { FlowNodeData } from '../../types';
 import { useLearningPathContext } from '../../../../hooks/useLearningPathContext';
 import { generateEvaluateUrl } from '../../../evaluate/utils/urlUtils';
+import { getConceptStatusStyle } from '../../utils/conceptStatusStyle';
 
 interface ConceptNodeProps {
   data: FlowNodeData;
 }
 
-const getStatusStyle = (status?: 'known' | 'ready' | 'locked') => {
-  switch (status) {
-    case 'known':
-      return {
-        borderColor: '#4caf50',
-        backgroundColor: '#e8f5e9',
-        icon: '✓',
-      };
-    case 'ready':
-      return {
-        borderColor: '#2196f3',
-        backgroundColor: '#e3f2fd',
-        icon: '🔓',
-      };
-    case 'locked':
-      return {
-        borderColor: '#f44336',
-        backgroundColor: '#ffebee',
-        icon: '🔒',
-      };
-    default:
-      return {
-        borderColor: '#e0e0e0',
-        backgroundColor: '#ffffff',
-        icon: '',
-      };
-  }
-};
-
 export default function ConceptNode({ data }: Readonly<ConceptNodeProps>) {
-  const statusStyle = getStatusStyle(data.status);
+  const statusStyle = getConceptStatusStyle(data.status);
   const { activeLearningPath } = useLearningPathContext();
   const navigate = useNavigate();
 

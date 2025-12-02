@@ -1,9 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LearningPathContext } from "./LearningPathContextDef";
 import { useLearningPath, useLearningPaths } from "../features/learning-path/queries";
 
+const STORAGE_KEY = 'learnora_active_learning_path_id';
+
 export const LearningPathContextProvider = ({ children }: { children: React.ReactNode }) => {
     const [activeLearningPathId, setActiveLearningPathIdState] = useState<number | null>(null);
+    const [isHydrated, setIsHydrated] = useState<boolean>(false);
+
+    // Load from localStorage on mount
+    useEffect(() => {
+        const storedPathId = localStorage.getItem(STORAGE_KEY);
+        if (storedPathId) {
+            setActiveLearningPathIdState(Number(storedPathId));
+        }
+        setIsHydrated(true);
+    }, []);
 
     const {
         data: learningPaths,
@@ -17,12 +29,18 @@ export const LearningPathContextProvider = ({ children }: { children: React.Reac
         error: pathError,
     } = useLearningPath(activeLearningPathId, true);
 
+    // Sync state updates to localStorage
     const setActiveLearningPath = (learningPathId: number | null) => {
         setActiveLearningPathIdState(learningPathId);
+        if (learningPathId !== null) {
+            localStorage.setItem(STORAGE_KEY, learningPathId.toString());
+        } else {
+            localStorage.removeItem(STORAGE_KEY);
+        }
     }
 
     const clearActiveLearningPath = () => {
-        setActiveLearningPathIdState(null);
+        setActiveLearningPath(null);
     }
 
     // if (isLoadingPaths || isLoadingPath) {
@@ -32,6 +50,11 @@ export const LearningPathContextProvider = ({ children }: { children: React.Reac
     // if (pathsError || pathError) {
     //     return <div>Error loading learning paths: {(pathsError || pathError) instanceof Error ? (pathsError || pathError)?.message : "Unknown error"}</div>;
     // }
+
+    // Don't render children until hydrated to avoid hydration mismatch
+    if (!isHydrated) {
+        return null;
+    }
 
     return (
         <LearningPathContext.Provider value={{
