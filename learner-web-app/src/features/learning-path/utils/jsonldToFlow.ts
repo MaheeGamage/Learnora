@@ -72,6 +72,14 @@ export function jsonldToFlow(
       visited.delete(nodeId);
       return 0;
     }
+    
+    // Goals should be at the rightmost position (highest level)
+    if (meta.type === "Goal") {
+      // Don't calculate level yet, will be set after all concepts
+      visited.delete(nodeId);
+      return 0;
+    }
+    
     if (!meta.prerequisites || meta.prerequisites.length === 0) {
       levels.set(nodeId, 0);
       visited.delete(nodeId);
@@ -88,8 +96,27 @@ export function jsonldToFlow(
     return nodeLevel;
   };
 
-  for (const key of nodeMeta.keys()) {
-    calcLevel(key);
+  // Calculate levels for all non-goal nodes first
+  for (const [key, meta] of nodeMeta) {
+    if (meta.type !== "Goal") {
+      calcLevel(key);
+    }
+  }
+  
+  // Find the maximum level from concepts
+  let maxConceptLevel = -1;
+  for (const [, level] of levels) {
+    if (level > maxConceptLevel) {
+      maxConceptLevel = level;
+    }
+  }
+  
+  // Place all goals at the rightmost position (one level after the last concept)
+  const goalLevel = maxConceptLevel + 1;
+  for (const [key, meta] of nodeMeta) {
+    if (meta.type === "Goal") {
+      levels.set(key, goalLevel);
+    }
   }
 
   // Group nodes by level
@@ -123,7 +150,7 @@ export function jsonldToFlow(
           status: meta?.status,
           concept: { id: meta.idRaw, label: meta.label }
         },
-        type: "concept-node",
+        type: meta?.type === "Goal" ? "goal-node" : "concept-node",
       });
       index += 1;
     }

@@ -2,7 +2,6 @@ import type { JsonLdDocument } from "jsonld";
 import {
   getLocalId,
   findLabel,
-  isConceptOrGoal,
   parsePrerequisites,
   collectKnownConcepts,
   determineConceptStatus,
@@ -32,7 +31,18 @@ export function extractConceptsWithStatus(
   const knownSet = collectKnownConcepts(jsonld);
 
   for (const item of jsonld) {
-    if (!item || !isConceptOrGoal(item)) continue;
+    if (!item) continue;
+    
+    // Only include Concept types, exclude Goals
+    const itemType = item["@type"];
+    if (!itemType) continue;
+    const types = Array.isArray(itemType) ? itemType : [itemType];
+    const isConcept = types.some(type => {
+      if (typeof type !== "string") return false;
+      const localType = getLocalId(type);
+      return localType === "Concept";
+    });
+    if (!isConcept) continue;
     
     const idRaw = item["@id"];
     if (typeof idRaw !== "string") continue;

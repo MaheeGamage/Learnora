@@ -19,13 +19,15 @@ import type { FlowNodeData } from '../types';
 import type { JsonLdDocument } from 'jsonld';
 import { Box } from '@mui/material';
 import ConceptNode from './reactFlow/ConceptNode';
+import GoalNode from './reactFlow/GoalNode';
 
 interface LearningPathFlowProps {
   jsonldData: JsonLdDocument | JsonLdDocument[] | null;
 }
 
 const nodeTypes = {
-  'concept-node': ConceptNode
+  'concept-node': ConceptNode,
+  'goal-node': GoalNode,
 };
 
 export default function LearningPathFlow({ jsonldData }: Readonly<LearningPathFlowProps>) {

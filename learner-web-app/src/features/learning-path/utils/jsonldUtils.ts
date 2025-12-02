@@ -49,6 +49,21 @@ export const isConceptOrGoal = (item: Record<string, unknown>): boolean => {
 };
 
 /**
+ * Check if item is a Concept type only (excludes Goals)
+ */
+export const isConcept = (item: Record<string, unknown>): boolean => {
+  const t = item["@type"];
+  if (!t) return false;
+  
+  const types = Array.isArray(t) ? t : [t];
+  return types.some(type => {
+    if (typeof type !== "string") return false;
+    const localType = getLocalId(type);
+    return localType === "Concept";
+  });
+};
+
+/**
  * Parse type from JSON-LD item
  */
 export const parseType = (item: Record<string, unknown>): string | undefined => {
