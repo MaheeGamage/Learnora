@@ -1,4 +1,6 @@
-export type FeedItemType = 'content' | 'evaluation';
+import type { ConceptWithStatus } from '../learning-path/utils/conceptStatusUtils';
+
+export type FeedItemType = 'content' | 'evaluation' | 'concept';
 
 export interface FeedContent {
     id: string;
@@ -25,4 +27,11 @@ export interface FeedEvaluation {
     difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
-export type FeedItem = FeedContent | FeedEvaluation;
+export interface FeedConcept {
+    id: string;
+    type: 'concept';
+    concept: ConceptWithStatus;
+    learningPathId: number;
+}
+
+export type FeedItem = FeedContent | FeedEvaluation | FeedConcept;

@@ -1,148 +1,402 @@
-import React, { useState } from 'react';
-import { 
-    Card, 
-    CardContent, 
-    Typography, 
-    Button, 
-    Radio, 
-    RadioGroup, 
-    FormControlLabel, 
-    FormControl, 
-    Alert, 
-    Box,
-    Avatar,
-    Chip
-} from '@mui/material';
-import QuizIcon from '@mui/icons-material/Quiz';
-import type { FeedEvaluation } from '../types';
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Chip,
+  Alert,
+  CircularProgress,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  Stack,
+  LinearProgress,
+  Collapse,
+} from "@mui/material";
+import { useState, useEffect } from "react";
+import { Quiz as QuizIcon, CheckCircle as CheckIcon } from "@mui/icons-material";
+import { useGenerateMCQ } from "../../agent/queries";
+import { useUpdateLearningPath } from "../../learning-path/queries";
+import type { MCQQuestion } from "../../agent/types";
+import { buildUserKnowsConceptTriple, hasPassedEvaluation } from "../../evaluate/utils/kgUpdateHelper";
 
 interface FeedEvaluationCardProps {
-    item: FeedEvaluation;
+  conceptName: string;
+  conceptId: string;
+  learningPathId: number;
+  userId: number;
+  learningPathKg?: Record<string, unknown>[] | null;
 }
 
-const FeedEvaluationCard: React.FC<FeedEvaluationCardProps> = ({ item }) => {
-    const [selectedAnswer, setSelectedAnswer] = useState<string>("");
-    const [isSubmitted, setIsSubmitted] = useState(false);
+/**
+ * Inline evaluation card for the feed
+ * Allows users to take concept evaluations directly in the feed
+ */
+export default function FeedEvaluationCard({
+  conceptName,
+  conceptId,
+  learningPathId,
+  userId,
+  learningPathKg,
+}: Readonly<FeedEvaluationCardProps>) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<string>("");
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [isUpdatingKG, setIsUpdatingKG] = useState(false);
 
-    const handleAnswerSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedAnswer(event.target.value);
-    };
+  const { mutate: generateMCQ, isPending, data, error } = useGenerateMCQ();
+  const { mutate: updateLearningPath } = useUpdateLearningPath(learningPathId);
 
-    const handleSubmit = () => {
-        setIsSubmitted(true);
-    };
+  // Generate questions when user starts evaluation
+  useEffect(() => {
+    if (isExpanded && !data && !isPending) {
+      generateMCQ({
+        concept_name: conceptName,
+        concept_id: conceptId,
+        difficulty_level: "Beginner",
+        question_count: 3, // Fewer questions for feed (3 instead of 5)
+        learning_path_db_id: learningPathId,
+      });
+    }
+  }, [isExpanded, data, isPending, generateMCQ, conceptName, conceptId, learningPathId]);
 
-    const isCorrect = selectedAnswer === item.correctAnswer;
+  // Auto-update knowledge graph when user passes
+  useEffect(() => {
+    if (showResults && !updateSuccess && !isUpdatingKG) {
+      const score = calculateScore();
+      if (hasPassedEvaluation(score)) {
+        handleUpdateKnowledgeGraph();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showResults]);
 
-    const getDifficultyColor = (difficulty: string) => {
-        if (difficulty === 'Beginner') return 'success';
-        if (difficulty === 'Intermediate') return 'warning';
-        return 'error';
-    };
+  const questions: MCQQuestion[] = data?.questions || [];
+  const currentQuestion = questions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
-    const getOptionStyles = (key: string) => {
-        let borderColor = 'divider';
-        let backgroundColor = 'transparent';
-        let opacity = 1;
+  const handleStartEvaluation = () => {
+    setIsExpanded(true);
+  };
 
-        if (isSubmitted) {
-            if (key === item.correctAnswer) {
-                borderColor = 'success.main';
-                backgroundColor = 'success.light';
-            } else if (key === selectedAnswer) {
-                borderColor = 'error.main';
-                backgroundColor = 'error.light';
-            } else {
-                opacity = 0.7;
-            }
-        } else if (key === selectedAnswer) {
-            borderColor = 'primary.main';
-            backgroundColor = 'action.selected';
-        }
+  const handleAnswerSelect = (answer: string) => {
+    setSelectedAnswer(answer);
+  };
 
-        return {
-            mb: 1,
-            p: 1,
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor,
-            backgroundColor,
-            opacity
-        };
-    };
+  const handleSubmitAnswer = () => {
+    if (!selectedAnswer) return;
 
-    return (
-        <Card sx={{ maxWidth: '100%', mb: 2, borderRadius: 2, boxShadow: 3 }}>
-             <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Avatar sx={{ bgcolor: 'secondary.main' }}>
-                    <QuizIcon />
-                </Avatar>
-                <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                        Quick Quiz • {item.topic}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                        Test your knowledge
-                    </Typography>
-                </Box>
-                 <Box sx={{ ml: 'auto' }}>
-                    <Chip 
-                        label={item.difficulty} 
-                        size="small" 
-                        color={getDifficultyColor(item.difficulty)} 
-                        variant="outlined" 
-                    />
-                </Box>
+    setShowExplanation(true);
+    setUserAnswers([...userAnswers, selectedAnswer]);
+  };
+
+  const handleNext = () => {
+    if (isLastQuestion) {
+      setShowResults(true);
+      return;
+    }
+
+    setCurrentQuestionIndex(currentQuestionIndex + 1);
+    setSelectedAnswer("");
+    setShowExplanation(false);
+  };
+
+  const calculateScore = () => {
+    if (!questions.length) return 0;
+
+    let correctCount = 0;
+    userAnswers.forEach((answer, index) => {
+      const question = questions[index];
+      if (question && answer === question.options[question.correct_answer]) {
+        correctCount++;
+      }
+    });
+
+    return (correctCount / questions.length) * 100;
+  };
+
+  const handleUpdateKnowledgeGraph = async () => {
+    if (!learningPathKg || isUpdatingKG) return;
+
+    setIsUpdatingKG(true);
+
+    try {
+      const updatedKg = [...learningPathKg];
+      const userKnowsTriple = buildUserKnowsConceptTriple(userId, conceptId);
+
+      // Check if the triple already exists
+      const exists = updatedKg.some(
+        (item) =>
+          item["@id"] === userKnowsTriple["@id"] &&
+          JSON.stringify(item["http://learnora.ai/ont#knows"]) ===
+            JSON.stringify(userKnowsTriple["http://learnora.ai/ont#knows"])
+      );
+
+      if (!exists) {
+        updatedKg.push(userKnowsTriple);
+      }
+
+      await new Promise((resolve, reject) => {
+        updateLearningPath(
+          { kg_data: updatedKg },
+          {
+            onSuccess: () => {
+              setUpdateSuccess(true);
+              resolve(undefined);
+            },
+            onError: (err) => {
+              console.error("Failed to update knowledge graph:", err);
+              reject(err);
+            },
+          }
+        );
+      });
+    } catch (err) {
+      console.error("Error updating knowledge graph:", err);
+    } finally {
+      setIsUpdatingKG(false);
+    }
+  };
+
+  const handleClose = () => {
+    setIsExpanded(false);
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer("");
+    setShowExplanation(false);
+    setUserAnswers([]);
+    setShowResults(false);
+    setUpdateSuccess(false);
+  };
+
+  const score = showResults ? calculateScore() : 0;
+  const passed = hasPassedEvaluation(score);
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        border: "2px solid",
+        borderColor: isExpanded ? "primary.main" : "divider",
+        borderRadius: 2,
+        overflow: "hidden",
+        transition: "all 0.3s ease",
+      }}
+    >
+      {/* Collapsed State */}
+      {!isExpanded && (
+        <Box
+          sx={{
+            p: 2.5,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            bgcolor: "primary.50",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <QuizIcon color="primary" sx={{ fontSize: 32 }} />
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                Test Your Knowledge
+              </Typography>
+              <Typography variant="h6" fontWeight={700} color="primary.main">
+                {conceptName}
+              </Typography>
             </Box>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<QuizIcon />}
+            onClick={handleStartEvaluation}
+          >
+            Start Quiz
+          </Button>
+        </Box>
+      )}
 
-            <CardContent>
-                <Typography variant="h6" gutterBottom>
-                    {item.question}
+      {/* Expanded State */}
+      <Collapse in={isExpanded}>
+        <Box sx={{ p: 3 }}>
+          {/* Header */}
+          <Box sx={{ mb: 3 }}>
+            <Chip
+              label={`${conceptName} Quiz`}
+              color="primary"
+              size="small"
+              sx={{ mb: 1 }}
+            />
+            {!showResults && questions.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 1,
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Question {currentQuestionIndex + 1} of {questions.length}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {Math.round(
+                      ((currentQuestionIndex + 1) / questions.length) * 100
+                    )}
+                    % Complete
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={((currentQuestionIndex + 1) / questions.length) * 100}
+                  sx={{ height: 6, borderRadius: 3 }}
+                />
+              </Box>
+            )}
+          </Box>
+
+          {/* Loading State */}
+          {isPending && (
+            <Box sx={{ textAlign: "center", py: 4 }}>
+              <CircularProgress />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Generating quiz questions...
+              </Typography>
+            </Box>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              Failed to generate questions. Please try again.
+            </Alert>
+          )}
+
+          {/* Question Display */}
+          {!isPending && !error && !showResults && currentQuestion && (
+            <Stack spacing={2}>
+              <Typography variant="body1" fontWeight={500}>
+                {currentQuestion.question}
+              </Typography>
+
+              <FormControl component="fieldset">
+                <RadioGroup
+                  value={selectedAnswer}
+                  onChange={(e) => handleAnswerSelect(e.target.value)}
+                >
+                  {Object.entries(currentQuestion.options).map(([key, option]) => (
+                    <FormControlLabel
+                      key={key}
+                      value={option}
+                      control={<Radio />}
+                      label={option}
+                      disabled={showExplanation}
+                      sx={{
+                        border: "1px solid",
+                        borderColor: showExplanation
+                          ? option === currentQuestion.options[currentQuestion.correct_answer]
+                            ? "success.main"
+                            : option === selectedAnswer
+                            ? "error.main"
+                            : "divider"
+                          : "divider",
+                        borderRadius: 1,
+                        mb: 1,
+                        p: 1,
+                        bgcolor: showExplanation
+                          ? option === currentQuestion.options[currentQuestion.correct_answer]
+                            ? "success.50"
+                            : option === selectedAnswer
+                            ? "error.50"
+                            : "transparent"
+                          : "transparent",
+                      }}
+                    />
+                  ))}
+                </RadioGroup>
+              </FormControl>
+
+              {showExplanation && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <Typography variant="body2" fontWeight={600} gutterBottom>
+                    Explanation:
+                  </Typography>
+                  <Typography variant="body2">
+                    {currentQuestion.explanation}
+                  </Typography>
+                </Alert>
+              )}
+
+              <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+                <Button variant="outlined" onClick={handleClose}>
+                  Cancel
+                </Button>
+                {!showExplanation ? (
+                  <Button
+                    variant="contained"
+                    onClick={handleSubmitAnswer}
+                    disabled={!selectedAnswer}
+                  >
+                    Submit Answer
+                  </Button>
+                ) : (
+                  <Button variant="contained" onClick={handleNext}>
+                    {isLastQuestion ? "See Results" : "Next Question"}
+                  </Button>
+                )}
+              </Box>
+            </Stack>
+          )}
+
+          {/* Results Display */}
+          {showResults && (
+            <Stack spacing={2}>
+              <Box sx={{ textAlign: "center", py: 2 }}>
+                {passed ? (
+                  <CheckIcon sx={{ fontSize: 64, color: "success.main" }} />
+                ) : (
+                  <QuizIcon sx={{ fontSize: 64, color: "warning.main" }} />
+                )}
+                <Typography variant="h5" fontWeight={600} sx={{ mt: 2 }}>
+                  {passed ? "Congratulations!" : "Keep Learning!"}
                 </Typography>
+                <Typography variant="h3" fontWeight={700} color="primary">
+                  {score.toFixed(0)}%
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  You got {userAnswers.filter((ans, i) => ans === questions[i]?.correct_answer).length} out of{" "}
+                  {questions.length} correct
+                </Typography>
+              </Box>
 
-                <FormControl component="fieldset" sx={{ width: '100%', mt: 1 }}>
-                    <RadioGroup value={selectedAnswer} onChange={handleAnswerSelect}>
-                        {Object.entries(item.options).map(([key, value]) => (
-                            <FormControlLabel
-                                key={key}
-                                value={key}
-                                control={<Radio />}
-                                label={value}
-                                disabled={isSubmitted}
-                                sx={getOptionStyles(key)}
-                            />
-                        ))}
-                    </RadioGroup>
-                </FormControl>
+              {passed && updateSuccess && (
+                <Alert severity="success">
+                  Great job! Your progress has been saved.
+                </Alert>
+              )}
 
-                {isSubmitted && (
-                    <Alert 
-                        severity={isCorrect ? "success" : "info"}
-                        sx={{ mt: 2 }}
-                    >
-                        <Typography variant="subtitle2" gutterBottom>
-                            {isCorrect ? "Correct!" : `Not quite. The correct answer is ${item.correctAnswer}.`}
-                        </Typography>
-                        <Typography variant="body2">
-                            {item.explanation}
-                        </Typography>
-                    </Alert>
-                )}
+              {passed && isUpdatingKG && (
+                <Alert severity="info">
+                  Updating your progress...
+                </Alert>
+              )}
 
-                {!isSubmitted && (
-                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button 
-                            variant="contained" 
-                            onClick={handleSubmit}
-                            disabled={!selectedAnswer}
-                        >
-                            Check Answer
-                        </Button>
-                    </Box>
-                )}
-            </CardContent>
-        </Card>
-    );
-};
+              {!passed && (
+                <Alert severity="info">
+                  You need 70% or higher to pass. Review the content and try again!
+                </Alert>
+              )}
 
-export default FeedEvaluationCard;
+              <Button variant="contained" onClick={handleClose} fullWidth>
+                Continue Learning
+              </Button>
+            </Stack>
+          )}
+        </Box>
+      </Collapse>
+    </Paper>
+  );
+}

@@ -1,34 +1,15 @@
 import { type Node, type Edge, MarkerType } from "@xyflow/react";
 import type { JsonLdDocument } from "jsonld";
 import type { FlowNodeData } from "../types";
-
-// Utility to get a safe local id from a full uri
-const getLocalId = (uri: string): string => {
-  if (!uri) return "";
-  const parts = uri.split("#");
-  const last = parts.length > 1 ? parts.pop()! : uri.split("/").pop()!;
-  // Replace characters that are not allowed in DOM ids
-  // Use replaceAll with a regex to satisfy lint rule
-  return String(last).replaceAll(/[^a-zA-Z0-9_-]/g, "_");
-};
-
-const findLabel = (item: Record<string, unknown>): string => {
-  // Search for common label predicates
-  const keys = Object.keys(item);
-  const labelKey = keys.find((k) => /label$/i.test(k) || /#label/.test(k));
-  if (!labelKey) return getLocalId((item["@id"] as string) || "");
-  const value = item[labelKey];
-  if (Array.isArray(value) && value.length > 0) {
-    const first = value[0];
-    if (first && typeof first === "object" && "@value" in first)
-      return String((first as Record<string, unknown>)["@value"]);
-    if (typeof first === "string") return first;
-  }
-  // Fallback: prefer the id-derived label instead of stringifying an object
-  const idVal = item["@id"];
-  if (typeof idVal === "string") return getLocalId(idVal);
-  return "";
-};
+import {
+  getLocalId,
+  findLabel,
+  isConceptOrGoal,
+  parseType,
+  parsePrerequisites,
+  collectKnownConcepts,
+  determineConceptStatus,
+} from "./jsonldUtils";
 
 export function jsonldToFlow(
   jsonld: JsonLdDocument[] = [],
@@ -50,64 +31,7 @@ export function jsonldToFlow(
   >();
 
   // Collect known concepts from any user 'knows' fields before building node meta
-  const knownSet = new Set<string>();
-  for (const item of jsonld) {
-    if (!item) continue;
-    const knows = item["http://learnora.ai/ont#knows"] ?? item["knows"];
-    if (!knows) continue;
-    const arr = Array.isArray(knows) ? knows : [knows];
-    for (const k of arr) {
-      if (!k) continue;
-      if (typeof k === "string") {
-        knownSet.add(getLocalId(k));
-      } else if (typeof k === "object" && (k as Record<string, unknown>)["@id"]) {
-        const idVal = (k as Record<string, unknown>)["@id"];
-        if (typeof idVal === "string") knownSet.add(getLocalId(idVal));
-      }
-    }
-  }
-
-  const getPrereqArray = (item: Record<string, unknown>): unknown[] => {
-    if (Array.isArray(item["http://learnora.ai/ont#hasPrerequisite"]))
-      return item["http://learnora.ai/ont#hasPrerequisite"] as unknown[];
-    if (Array.isArray(item["hasPrerequisite"]))
-      return item["hasPrerequisite"] as unknown[];
-    if (Array.isArray(item["has_prerequisite"]))
-      return item["has_prerequisite"] as unknown[];
-    return [];
-  };
-
-  const parseType = (item: Record<string, unknown>): string | undefined => {
-    const t = item["@type"];
-    if (Array.isArray(t) && t.length > 0 && typeof t[0] === "string")
-      return getLocalId(t[0]);
-    if (typeof t === "string") return getLocalId(t);
-    return undefined;
-  };
-
-  const isConceptOrGoal = (item: Record<string, unknown>): boolean => {
-    const t = item["@type"];
-    if (!t) return false;
-    
-    const types = Array.isArray(t) ? t : [t];
-    return types.some(type => {
-      if (typeof type !== "string") return false;
-      const localType = getLocalId(type);
-      return localType === "Concept" || localType === "Goal";
-    });
-  };
-
-  const parsePrereqs = (item: Record<string, unknown>): string[] => {
-    const prereqArray = getPrereqArray(item);
-    const prerequisites: string[] = [];
-    for (const p of prereqArray) {
-      if (p && typeof p === "object" && (p as Record<string, unknown>)["@id"]) {
-        const idVal = (p as Record<string, unknown>)["@id"];
-        if (typeof idVal === "string") prerequisites.push(getLocalId(idVal));
-      }
-    }
-    return prerequisites;
-  };
+  const knownSet = collectKnownConcepts(jsonld);
 
   const collectNodeMeta = (items: Array<Record<string, unknown>>) => {
     for (const item of items) {
@@ -121,7 +45,7 @@ export function jsonldToFlow(
       const localId = getLocalId(idRaw);
       const type = parseType(item);
       const label = findLabel(item);
-      const prerequisites = parsePrereqs(item);
+      const prerequisites = parsePrerequisites(item);
 
       const known = knownSet.has(localId);
 
@@ -131,26 +55,9 @@ export function jsonldToFlow(
 
   collectNodeMeta(jsonld);
 
-  // Determine learning status for each node
-  const determineStatus = (nodeId: string): 'known' | 'ready' | 'locked' => {
-    const meta = nodeMeta.get(nodeId);
-    if (!meta) return 'locked';
-    
-    // If user already knows this concept
-    if (knownSet.has(nodeId)) return 'known';
-    
-    // If no prerequisites, it's ready to learn
-    if (!meta.prerequisites || meta.prerequisites.length === 0) return 'ready';
-    
-    // Check if all prerequisites are known
-    const allPrereqsKnown = meta.prerequisites.every(prereqId => knownSet.has(prereqId));
-    
-    return allPrereqsKnown ? 'ready' : 'locked';
-  };
-
   // Apply status to all nodes
   for (const [nodeId, meta] of nodeMeta) {
-    meta.status = determineStatus(nodeId);
+    meta.status = determineConceptStatus(nodeId, meta.prerequisites, knownSet);
   }
 
   // Calculate levels (simple DFS)
