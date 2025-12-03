@@ -54,7 +54,7 @@ export default function ContentCard({ result, onSelect }: ContentCardProps) {
     const handleComplete = async (event: React.SyntheticEvent) => {
         event.stopPropagation(); // Prevent card click
 
-        if (!session?.access_token || isCompleted) return;
+        if (!session || isCompleted) return;
 
         setIsCompleted(true);
 
@@ -69,7 +69,7 @@ export default function ContentCard({ result, onSelect }: ContentCardProps) {
                 content_tags: content.tags,
                 duration_seconds: Math.floor((Date.now() - clickTime) / 1000),
                 completion_percentage: 100,
-            }, session.access_token);
+            });
 
             setShowCompletedSuccess(true);
         } catch (error) {
@@ -81,7 +81,7 @@ export default function ContentCard({ result, onSelect }: ContentCardProps) {
     const handleRating = async (event: React.SyntheticEvent, newValue: number | null) => {
         event.stopPropagation(); // Prevent card click
 
-        if (!session?.access_token || newValue === null) return;
+        if (!session || newValue === null) return;
 
         setUserRating(newValue);
 
@@ -97,7 +97,7 @@ export default function ContentCard({ result, onSelect }: ContentCardProps) {
                 duration_seconds: 0,
                 completion_percentage: 0,
                 rating: newValue,
-            }, session.access_token);
+            });
 
             setShowRatingSuccess(true);
         } catch (error) {
@@ -107,7 +107,7 @@ export default function ContentCard({ result, onSelect }: ContentCardProps) {
 
     const handleClick = async () => {
         // Track interaction
-        if (session?.access_token) {
+        if (session) {
             const durationSeconds = Math.floor((Date.now() - clickTime) / 1000);
 
             try {
@@ -121,7 +121,7 @@ export default function ContentCard({ result, onSelect }: ContentCardProps) {
                     content_tags: content.tags,
                     duration_seconds: durationSeconds,
                     completion_percentage: 0,
-                }, session.access_token);
+                });
 
                 // Show tracking confirmation
                 setShowTracked(true);

@@ -47,8 +47,7 @@ export interface FeedGenerationResult {
  */
 async function generateFeedForConcept(
   concept: ConceptWithStatus,
-  config: FeedConfig,
-  token: string
+  config: FeedConfig
 ): Promise<{ items: FeedSearchResultItem[]; error?: string }> {
   try {
     const response = await searchContent(
@@ -60,8 +59,7 @@ async function generateFeedForConcept(
         max_summary_words: config.maxSummaryWords,
         auto_discover: true,
         use_nlp: true,
-      },
-      token
+      }
     );
 
     // Add concept tracking to each result
@@ -83,13 +81,11 @@ async function generateFeedForConcept(
  * 
  * @param concepts - Array of ready concepts to generate content for
  * @param config - Feed generation configuration
- * @param token - Authentication token
  * @returns Feed generation result with items and any errors
  */
 export async function generateFeedFromConcepts(
   concepts: ConceptWithStatus[],
-  config: FeedConfig,
-  token: string
+  config: FeedConfig
 ): Promise<FeedGenerationResult> {
   if (concepts.length === 0) {
     return {
@@ -101,7 +97,7 @@ export async function generateFeedFromConcepts(
 
   // Execute searches in parallel for all concepts
   const searchPromises = concepts.map((concept) =>
-    generateFeedForConcept(concept, config, token)
+    generateFeedForConcept(concept, config)
       .then((result) => ({ concept: concept.label, ...result }))
   );
 

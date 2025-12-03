@@ -65,17 +65,17 @@ export default function ContentDiscovery() {
     const summaryWords = 150; // TODO: Add slider UI to let users adjust this
 
     const loadRecommendations = useCallback(async () => {
-        if (!session?.access_token) {
+        if (!session) {
             return;
         }
 
         try {
-            const recs = await getRecommendations(session.access_token);
+            const recs = await getRecommendations();
             setRecommendations(recs);
         } catch (err) {
             console.error('Failed to load recommendations:', err);
         }
-    }, [session?.access_token]);
+    }, [session]);
 
     useEffect(() => {
         loadRecommendations();
@@ -89,7 +89,7 @@ export default function ContentDiscovery() {
             return;
         }
 
-        if (!session?.access_token) {
+        if (!session) {
             setError('Please sign in to search for content');
             return;
         }
@@ -111,8 +111,7 @@ export default function ContentDiscovery() {
                     discovery_sources: ['youtube', 'medium', 'github'], // API sources
                     personalize: enablePersonalization, // 🆕 Enable personalization
                     max_summary_words: summaryWords, // 🆕 Summary length
-                },
-                session.access_token
+                }
             );
 
             setResults(response.results);

@@ -1,4 +1,6 @@
 // Content Discovery API Service
+import apiClient from '../../api/baseClient';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const API_V1_PREFIX = '/api/v1';
 
@@ -112,25 +114,14 @@ export interface SetKeywordsResponse {
  */
 export async function searchContent(
     request: SearchRequest,
-    token: string
+    token?: string // Made optional since apiClient will handle auth
 ): Promise<SearchResponse> {
-    const response = await fetch(
-        `${API_BASE_URL}/content-discovery/search`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(request),
-        }
+    const response = await apiClient.post<SearchResponse>(
+        '/content-discovery/search',
+        request
     );
 
-    if (!response.ok) {
-        throw new Error(`Search failed: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
 }
 
 /**
@@ -138,25 +129,14 @@ export async function searchContent(
  */
 export async function crawlUrls(
     request: CrawlRequest,
-    token: string
+    token?: string // Made optional since apiClient will handle auth
 ): Promise<CrawlResponse> {
-    const response = await fetch(
-        `${API_BASE_URL}/content-discovery/crawl`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(request),
-        }
+    const response = await apiClient.post<CrawlResponse>(
+        '/content-discovery/crawl',
+        request
     );
 
-    if (!response.ok) {
-        throw new Error(`Crawl failed: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
 }
 
 /**
@@ -164,25 +144,14 @@ export async function crawlUrls(
  */
 export async function indexContent(
     request: IndexContentRequest,
-    token: string
+    token?: string // Made optional since apiClient will handle auth
 ): Promise<IndexContentResponse> {
-    const response = await fetch(
-        `${API_BASE_URL}/content-discovery/index`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(request),
-        }
+    const response = await apiClient.post<IndexContentResponse>(
+        '/content-discovery/index',
+        request
     );
 
-    if (!response.ok) {
-        throw new Error(`Indexing failed: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
 }
 
 /**
@@ -190,25 +159,14 @@ export async function indexContent(
  */
 export async function setCustomKeywords(
     request: SetKeywordsRequest,
-    token: string
+    token?: string // Made optional since apiClient will handle auth
 ): Promise<SetKeywordsResponse> {
-    const response = await fetch(
-        `${API_BASE_URL}/content-discovery/set-keywords`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(request),
-        }
+    const response = await apiClient.post<SetKeywordsResponse>(
+        '/content-discovery/set-keywords',
+        request
     );
 
-    if (!response.ok) {
-        throw new Error(`Failed to set keywords: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
 }
 
 /**
@@ -216,43 +174,24 @@ export async function setCustomKeywords(
  */
 export async function enableAutoDiscovery(
     enabled: boolean,
-    token: string
+    token?: string // Made optional since apiClient will handle auth
 ): Promise<{ auto_discovery_enabled: boolean }> {
-    const response = await fetch(
-        `${API_BASE_URL}/content-discovery/enable-auto-discovery?enabled=${enabled}`,
-        {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        }
+    const response = await apiClient.post<{ auto_discovery_enabled: boolean }>(
+        `/content-discovery/enable-auto-discovery?enabled=${enabled}`
     );
 
-    if (!response.ok) {
-        throw new Error(`Failed to enable auto discovery: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
 }
 
 /**
  * Get content discovery statistics
  */
-export async function getContentStats(token: string): Promise<ContentStats> {
-    const response = await fetch(
-        `${API_BASE_URL}/content-discovery/stats`,
-        {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        }
+export async function getContentStats(token?: string): Promise<ContentStats> {
+    const response = await apiClient.get<ContentStats>(
+        '/content-discovery/stats'
     );
 
-    if (!response.ok) {
-        throw new Error(`Failed to fetch stats: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
 }
 
 /**
@@ -261,22 +200,13 @@ export async function getContentStats(token: string): Promise<ContentStats> {
 export async function getAllContent(
     skip = 0,
     limit = 100,
-    token: string
+    token?: string // Made optional since apiClient will handle auth
 ): Promise<LearningContent[]> {
-    const response = await fetch(
-        `${API_BASE_URL}/content-discovery/contents?skip=${skip}&limit=${limit}`,
-        {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        }
+    const response = await apiClient.get<LearningContent[]>(
+        `/content-discovery/contents?skip=${skip}&limit=${limit}`
     );
 
-    if (!response.ok) {
-        throw new Error(`Failed to fetch content: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
 }
 
 /**
@@ -284,31 +214,22 @@ export async function getAllContent(
  */
 export async function getContentById(
     contentId: string,
-    token: string
+    token?: string // Made optional since apiClient will handle auth
 ): Promise<LearningContent> {
-    const response = await fetch(
-        `${API_BASE_URL}/content-discovery/content/${contentId}`,
-        {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        }
+    const response = await apiClient.get<LearningContent>(
+        `/content-discovery/content/${contentId}`
     );
 
-    if (!response.ok) {
-        throw new Error(`Failed to fetch content: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
 }
 
 /**
  * Get recommended content (mock for now - can be enhanced)
  */
 export async function getRecommendations(
-    token: string
+    token?: string // Made optional since apiClient will handle auth
 ): Promise<LearningContent[]> {
     // For now, get recent content as recommendations
     // This can be enhanced with a dedicated recommendations endpoint
-    return getAllContent(0, 6, token);
+    return getAllContent(0, 6);
 }

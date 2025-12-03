@@ -93,22 +93,6 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = () => {
     );
   };
 
-  if (isLoadingPaths) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (pathsError) {
-    return (
-      <Alert severity="error">
-        Error loading learning paths: {pathsError instanceof Error ? pathsError.message : "Unknown error"}
-      </Alert>
-    );
-  }
-
   return (
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
@@ -122,7 +106,15 @@ const LearningPathIntegration: React.FC<LearningPathIntegrationProps> = () => {
         </Button>
       </Box>
 
-      {!learningPaths || learningPaths.length === 0 ? (
+      {isLoadingPaths ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+          <CircularProgress />
+        </Box>
+      ) : pathsError ? (
+        <Alert severity="error">
+          Error loading learning paths: {pathsError instanceof Error ? pathsError.message : "Unknown error"}
+        </Alert>
+      ) : !learningPaths || learningPaths.length === 0 ? (
         <Alert severity="info">No learning paths available</Alert>
       ) : (
         <>
