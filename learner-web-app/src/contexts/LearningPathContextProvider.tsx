@@ -29,6 +29,13 @@ export const LearningPathContextProvider = ({ children }: { children: React.Reac
         error: pathError,
     } = useLearningPath(activeLearningPathId, true);
 
+    // Clear from localStorage if there's an error loading the path
+    useEffect(() => {
+        if (pathError && activeLearningPathId !== null) {
+            clearActiveLearningPath();
+        }
+    }, [pathError, activeLearningPathId]);
+
     // Sync state updates to localStorage
     const setActiveLearningPath = (learningPathId: number | null) => {
         setActiveLearningPathIdState(learningPathId);
