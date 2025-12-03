@@ -40,7 +40,7 @@ const Feed: React.FC = () => {
   // Generate feed when selected concepts change
   useEffect(() => {
     async function loadFeed() {
-      if (!session?.access_token || selectedConcepts.size === 0) {
+      if (!session || selectedConcepts.size === 0) {
         setFeedItems([]);
         return;
       }
@@ -57,8 +57,7 @@ const Feed: React.FC = () => {
         // Generate feed from selected concepts
         const result = await generateFeedFromConcepts(
           selectedConceptObjects,
-          DEFAULT_FEED_CONFIG,
-          session.access_token
+          DEFAULT_FEED_CONFIG
         );
 
         setFeedItems(result.items);
@@ -77,7 +76,7 @@ const Feed: React.FC = () => {
     }
 
     loadFeed();
-  }, [selectedConcepts, readyConcepts, session?.access_token]);
+  }, [selectedConcepts, readyConcepts, session]);
 
   const handleConceptToggle = (conceptId: string) => {
     setSelectedConcepts(prev => {

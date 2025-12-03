@@ -1,6 +1,7 @@
 /**
  * Service for managing user learning preferences and interactions
  */
+import apiClient from '../../api/baseClient';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -64,22 +65,10 @@ export interface LearningInsights {
 /**
  * Get user's learning preferences
  */
-export async function getPreferences(token: string): Promise<UserPreferences> {
+export async function getPreferences(token?: string): Promise<UserPreferences> {
     try {
-        const response = await fetch(`${API_URL}/preferences/`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to fetch preferences: ${response.status} ${errorText}`);
-        }
-
-        return response.json();
+        const response = await apiClient.get<UserPreferences>('/api/v1/preferences/');
+        return response.data;
     } catch (error) {
         if (error instanceof TypeError && error.message.includes('fetch')) {
             throw new Error('Network error: Unable to connect to backend server');
@@ -93,22 +82,10 @@ export async function getPreferences(token: string): Promise<UserPreferences> {
  */
 export async function updatePreferences(
     updates: PreferencesUpdate,
-    token: string
+    token?: string
 ): Promise<UserPreferences> {
-    const response = await fetch(`${API_URL}/preferences/`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to update preferences');
-    }
-
-    return response.json();
+    const response = await apiClient.put<UserPreferences>('/api/v1/preferences/', updates);
+    return response.data;
 }
 
 /**
@@ -116,44 +93,20 @@ export async function updatePreferences(
  */
 export async function trackInteraction(
     interaction: ContentInteraction,
-    token: string
+    token?: string
 ): Promise<void> {
     console.log('Tracking URL:', `${API_URL}/preferences/interactions`);
-    const response = await fetch(`${API_URL}/preferences/interactions`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(interaction),
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to track interaction');
-    }
-
-    return response.json();
+    const response = await apiClient.post<void>('/api/v1/preferences/interactions', interaction);
+    return response.data;
 }
 
 /**
  * Get learning insights and statistics
  */
-export async function getLearningInsights(token: string): Promise<LearningInsights> {
+export async function getLearningInsights(token?: string): Promise<LearningInsights> {
     try {
-        const response = await fetch(`${API_URL}/preferences/insights`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to fetch insights: ${response.status} ${errorText}`);
-        }
-
-        return response.json();
+        const response = await apiClient.get<LearningInsights>('/api/v1/preferences/insights');
+        return response.data;
     } catch (error) {
         if (error instanceof TypeError && error.message.includes('fetch')) {
             throw new Error('Network error: Unable to connect to backend server');

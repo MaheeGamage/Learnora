@@ -19,4 +19,18 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Add a response interceptor to handle 401 errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear the access token from localStorage
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      // Redirect to login page
+      window.location.href = "/sign-in";
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default apiClient;

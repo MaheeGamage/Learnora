@@ -12,10 +12,14 @@ import {
   AccountPopoverFooter,
   SignOutButton,
 } from '@toolpad/core/Account';
+import { useNavigate } from 'react-router';
 import type { SidebarFooterProps } from '@toolpad/core/DashboardLayout';
+import { signOut } from '../../features/auth/authService';
+import { useSession } from '../hooks/useSession';
 
 function AccountSidebarPreview(props: AccountPreviewProps & { mini: boolean }) {
   const { handleClick, open, mini } = props;
+
   return (
     <Stack direction="column" p={0} overflow="hidden">
       <Divider />
@@ -30,10 +34,19 @@ function AccountSidebarPreview(props: AccountPreviewProps & { mini: boolean }) {
 }
 
 function SidebarFooterAccountPopover({ mini }: { mini: boolean }) {
+  const navigate = useNavigate();
+  const { setSession } = useSession();
+  
+  const handleLogout = async () => {
+    await signOut();
+    setSession(null);
+    navigate('/sign-in');
+  };
+  
   return (
     <Stack direction="column">
       {mini ? <AccountPreview variant="expanded" /> : null}
-      <MenuList>
+      {/* <MenuList>
         <Button
           variant="text"
           sx={{ textTransform: 'capitalize', display: 'flex', mx: 'auto' }}
@@ -44,16 +57,16 @@ function SidebarFooterAccountPopover({ mini }: { mini: boolean }) {
         >
           Add account
         </Button>
-      </MenuList>
+      </MenuList> */}
       <Divider />
       <AccountPopoverFooter>
-        <SignOutButton />
+        <SignOutButton 
+          onClick={handleLogout}
+        />
       </AccountPopoverFooter>
     </Stack>
   );
-}
-
-const createPreviewComponent = (mini: boolean) => {
+}const createPreviewComponent = (mini: boolean) => {
   function PreviewComponent(props: AccountPreviewProps) {
     return <AccountSidebarPreview {...props} mini={mini} />;
   }
