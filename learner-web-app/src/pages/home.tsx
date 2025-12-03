@@ -1,7 +1,7 @@
-import DemoFeed from '../features/feed/DemoFeed';
+import { Feed } from '../features/feed';
 
 export default function DashboardPage() {
   return (
-    <DemoFeed />
+    <Feed />
   )
 }

@@ -94,9 +94,9 @@ const DemoFeed: React.FC = () => {
                     <React.Fragment key={item.id}>
                         {item.type === 'content' ? (
                             <FeedContentCard item={item} />
-                        ) : (
+                        ) : item.type === 'evaluation' ? (
                             <FeedEvaluationCard item={item} />
-                        )}
+                        ) : null}
                     </React.Fragment>
                 ))}
             </Stack>
